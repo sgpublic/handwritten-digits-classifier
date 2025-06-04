@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "handwritten-digits-classifier"
+version = "0.1.0"
+description = "Hand written digits classifier"
+authors = ["Haven Madray <sgpublic2002@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "~3.10"
+gradio = "^5.14.0"
+
+
+[tool.poetry.group.dev.dependencies]
+wheel = "^0.45.1"
+setuptools = "^75.8.0"
+pip = "~24.3"
+poethepoet = "^0.32.2"
+
+
+[tool.poe.tasks]
+pytorch-cpu = "pip install --force-reinstall -i https://download.pytorch.org/whl/cpu torch==2.7.0 torchvision"
+pytorch-cu128 = "pip install --force-reinstall -i https://download.pytorch.org/whl/cu128 torch==2.7.0 torchvision"
+pytorch-cpu-alimirror = "pip install --force-reinstall -f https://mirrors.aliyun.com/pytorch-wheels/cpu torch==2.7.0 torchvision"
+pytorch-cu128-alimirror = "pip install --force-reinstall -f https://mirrors.aliyun.com/pytorch-wheels/cu128 torch==2.7.0 torchvision"
+
+
+[tool.poetry.scripts]
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
