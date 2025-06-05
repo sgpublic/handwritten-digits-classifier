@@ -5,11 +5,16 @@ description = "Hand written digits classifier"
 authors = ["Haven Madray <sgpublic2002@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-package-mode = false
+packages = [
+    { include = "hwdc" },
+]
+
 
 [tool.poetry.dependencies]
 python = "~3.10"
 gradio = "^5.14.0"
+huggingface-hub = "^0.32.4"
+datasets = {extras = ["vision"], version = "^3.6.0"}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -27,7 +32,7 @@ pytorch-cu128-alimirror = "pip install --force-reinstall -f https://mirrors.aliy
 
 
 [tool.poetry.scripts]
-
+train = "hwdc_trainer.main:start_train"
 
 
 [build-system]
