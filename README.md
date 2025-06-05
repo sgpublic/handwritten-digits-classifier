@@ -29,3 +29,10 @@ poetry run train
 poetry run webui_local # 使用本地训练的模型
 poetry run webui_pretrained # 使预训练模型
 ```
+
+环境变量：
+
+| 变量名称        | 变量解释                           | 默认值     |
+|-------------|--------------------------------|---------|
+| HWDC_DEBUG  | 是否打印 DEBUG 日志                  | `false` |
+| HWDC_DEVICE | 训练/推理使用的设备类型，可选 `cuda`、`cpu` 等 | `cpu`   |

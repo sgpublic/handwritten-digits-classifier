@@ -8,8 +8,8 @@ else:
     logging_level = logging.INFO
 
 logging.basicConfig(
-    format='%(asctime)s %(levelname)s - [%(name)s] %(message)s',
-    datefmt='%Y-%m-%d %I:%M:%S',
+    format="%(asctime)s %(levelname)s - [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %I:%M:%S",
     level=logging_level,
 )
 

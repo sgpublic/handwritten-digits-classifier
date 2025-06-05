@@ -15,6 +15,7 @@ python = "~3.10"
 gradio = "^5.14.0"
 huggingface-hub = "^0.32.4"
 datasets = {extras = ["vision"], version = "^3.6.0"}
+pooch = "^1.8.2"
 
 
 [tool.poetry.group.dev.dependencies]

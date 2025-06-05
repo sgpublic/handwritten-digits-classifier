@@ -1,3 +1,3 @@
 from os import path
 
-PROJECT_ROOT = path.join(path.dirname(__file__), '../')
+PROJECT_ROOT = path.join(path.dirname(__file__), "../")
