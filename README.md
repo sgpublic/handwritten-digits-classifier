@@ -32,7 +32,11 @@ poetry run webui_pretrained # 使预训练模型
 
 环境变量：
 
-| 变量名称        | 变量解释                           | 默认值     |
-|-------------|--------------------------------|---------|
-| HWDC_DEBUG  | 是否打印 DEBUG 日志                  | `false` |
-| HWDC_DEVICE | 训练/推理使用的设备类型，可选 `cuda`、`cpu` 等 | `cpu`   |
+| 变量名称                      | 变量解释                           | 默认值     |
+|---------------------------|--------------------------------|---------|
+| HWDC_DEBUG                | 是否打印 DEBUG 日志                  | `false` |
+| HWDC_DEVICE               | 训练/推理使用的设备类型，可选 `cuda`、`cpu` 等 | `cpu`   |
+| HWDC_DATASET_BATCH_SIZE   | 训练时每批次数据集大小                    | 100     |
+| HWDC_DATASET_EPOCHS       | 训练时批次数量                        | 10      |
+| HWDC_MODEL_SAVE_INTERVAL  | 训练时模型保存步长（批次）                  | 1       |
+| HWDC_MODEL_USE_PRETRAINED | WebUI 是否使用预训练模型                | `true`  |
