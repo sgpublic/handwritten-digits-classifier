@@ -1,5 +1,3 @@
-from typing import Dict
-
 import torch
 from PIL import Image
 from torch import Tensor

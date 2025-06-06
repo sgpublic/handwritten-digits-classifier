@@ -1,18 +1,16 @@
 import os.path
 import shutil
-from typing import overload
 
 import torch
 from PIL import Image, ImageOps
 from huggingface_hub import hf_hub_download
-from torch import nn, Tensor
-from torchvision import transforms
+from torch import nn
 from torchvision.models.resnet import _resnet, BasicBlock, ResNet
 
 from hwdc.core.config import HWDC_DEVICE
 from hwdc.core.logger import create_logger
 from hwdc.core.resource import hwdc_path
-from hwdc.core.tensor import image_to_tenser, image_to_batch_tenser
+from hwdc.core.tensor import image_to_batch_tenser
 
 logger = create_logger(__name__)
 

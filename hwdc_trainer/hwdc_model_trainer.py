@@ -1,9 +1,8 @@
 import os
-from typing import overload
 
 import torch
 from huggingface_hub import upload_file
-from torch import nn, optim, Tensor
+from torch import nn, optim
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader

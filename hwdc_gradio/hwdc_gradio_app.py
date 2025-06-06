@@ -1,5 +1,4 @@
 import gradio
-from PIL import Image
 
 from hwdc.hwdc_model import HwdcModel
 from hwdc_gradio.config import HWDC_MODEL_USE_PRETRAINED
