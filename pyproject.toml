@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "~3.10"
-gradio = "^5.14.0"
+gradio = "^5.33.0"
 huggingface-hub = "^0.32.4"
 datasets = {extras = ["vision"], version = "^3.6.0"}
 pooch = "^1.8.2"
@@ -25,6 +25,10 @@ pip = "~24.3"
 poethepoet = "^0.32.2"
 
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
+
 [tool.poe.tasks]
 pytorch-cpu = "pip install --force-reinstall -i https://download.pytorch.org/whl/cpu torch==2.7.0 torchvision"
 pytorch-cu128 = "pip install --force-reinstall -i https://download.pytorch.org/whl/cu128 torch==2.7.0 torchvision"
@@ -34,6 +38,7 @@ pytorch-cu128-alimirror = "pip install --force-reinstall -f https://mirrors.aliy
 
 [tool.poetry.scripts]
 train = "hwdc_trainer.main:start_train"
+webui = "hwdc_gradio.main:start_webui"
 
 
 [build-system]

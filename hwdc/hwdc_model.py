@@ -1,25 +1,32 @@
 import os.path
 import shutil
+from typing import overload
 
 import torch
+from PIL import Image, ImageOps
 from huggingface_hub import hf_hub_download
-from torch import nn
+from torch import nn, Tensor
+from torchvision import transforms
 from torchvision.models.resnet import _resnet, BasicBlock, ResNet
 
 from hwdc.core.config import HWDC_DEVICE
 from hwdc.core.logger import create_logger
 from hwdc.core.resource import hwdc_path
+from hwdc.core.tensor import image_to_tenser, image_to_batch_tenser
 
 logger = create_logger(__name__)
 
 
 class HwdcModel:
-    _repo_id = "mhmzx/handwritten-digits-classifier"
-    _repo_pretrained_model = "hwdc_pretrained.pth"
+    @property
+    def repo_id(self):
+        return "mhmzx/handwritten-digits-classifier"
 
-    def __init__(self,
-                 use_pretrained: bool = True):
-        self._use_pretrained = use_pretrained
+    @property
+    def repo_pretrained_model(self):
+        return "hwdc_pretrained.pth"
+
+    def __init__(self):
         self._resnet_model = self._create_empty_model()
         _device = HWDC_DEVICE
         if _device == "cuda" and not torch.cuda.is_available():
@@ -27,7 +34,17 @@ class HwdcModel:
             _device = "cpu"
         self._device = torch.device(_device)
         self._model_local = hwdc_path("./model/hwdc_local.pth")
-        self._model_pretrained = None
+
+    @property
+    def model_local(self):
+        return self._model_local
+
+    @property
+    def resnet_model(self):
+        return self._resnet_model
+
+    def move_to_device(self, obj: any):
+        return obj.to(self._device)
 
     @staticmethod
     def _create_empty_model() -> ResNet:
@@ -44,22 +61,22 @@ class HwdcModel:
         model.conv1 = nn.Conv2d(1, 64, kernel_size=5, stride=1, padding=2, bias=False)
         return model
 
-    def load(self) -> bool:
+    def load(self, use_pretrained: bool = True) -> bool:
         logger.info("load model weights...")
         try:
-            if self._use_pretrained:
+            if use_pretrained:
                 model_pretrained = hf_hub_download(
-                    repo_id=self._repo_id,
-                    filename=self._repo_pretrained_model,
+                    repo_id=self.repo_id,
+                    filename=self.repo_pretrained_model,
                 )
                 state_dict = torch.load(model_pretrained)
             else:
-                if not os.path.exists(self._model_local) or not os.path.isfile(self._model_local):
+                if not os.path.exists(self.model_local) or not os.path.isfile(self.model_local):
                     raise FileNotFoundError("weights not exist!")
-                shutil.copy(self._model_local, f"{self._model_local}.bak")
-                state_dict = torch.load(self._model_local)
+                shutil.copy(self.model_local, f"{self.model_local}.bak")
+                state_dict = torch.load(self.model_local)
 
-            self._resnet_model.load_state_dict(state_dict)
+            self.resnet_model.load_state_dict(state_dict)
 
             logger.info("load model finished")
             return True
@@ -70,4 +87,24 @@ class HwdcModel:
             logger.exception("weights load failed!")
             return False
         finally:
-            self._resnet_model.to(self._device)
+            self.move_to_device(self.resnet_model)
+            self.resnet_model.eval()
+
+    def preprocess(self, image: Image) -> Image:
+        payload = image.resize((28, 28), Image.LANCZOS)
+        payload = ImageOps.invert(payload)
+        return payload
+
+    def predict(self, image: Image) -> tuple[int, float]:
+        payload = self.preprocess(image)
+        payload = image_to_batch_tenser(payload)
+        payload = self.move_to_device(payload)
+        model_output = self.resnet_model(payload)
+        logger.debug(f"model_output: {model_output}")
+
+        probabilities = torch.softmax(model_output, dim=1)
+        predicted_number = torch.argmax(probabilities, dim=1).item()
+        confidence = probabilities[0, predicted_number].item()
+        logger.info(f"predicted result: {predicted_number}, confidence: {confidence:.2%}")
+
+        return predicted_number, confidence

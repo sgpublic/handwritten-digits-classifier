@@ -1,9 +1,8 @@
-import torch
 from datasets import DownloadConfig, load_dataset
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from hwdc.core.logger import create_logger
+from hwdc.core.tensor import batch_to_tensor
 
 logger = create_logger(__name__)
 
@@ -11,16 +10,6 @@ _dl_config = DownloadConfig(
     resume_download=True,
     force_download=False,
 )
-
-_transform = transforms.ToTensor()
-
-
-def mnist_encode(batch: any):
-    images = [_transform(img.convert("L")) for img in batch["image"]]
-    return {
-        "image": torch.stack(images),
-        "label": torch.tensor(batch["label"]),
-    }
 
 
 # https://huggingface.co/datasets/ylecun/mnist
@@ -36,7 +25,7 @@ def load_mnist_dataset(
     )
     dataset = dataset[split]
     dataset = dataset.with_transform(
-        transform=mnist_encode,
+        transform=batch_to_tensor,
         columns=["image", "label"],
     )
     logger.info("load mnist dataset finished")
