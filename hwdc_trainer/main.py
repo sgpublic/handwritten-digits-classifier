@@ -5,7 +5,6 @@ def start_train():
     trainer = HwdcModelTrainer()
     trainer.load()
     trainer.train()
-    trainer.save()
 
 
 if __name__ == "__main__":
