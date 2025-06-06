@@ -58,7 +58,6 @@ class HwdcModelTrainer(HwdcModel):
             inputs, labels = self.move_to_device(inputs), self.move_to_device(labels)
 
             optimizer.zero_grad()
-            print(inputs.shape)
             outputs = self.resnet_model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()

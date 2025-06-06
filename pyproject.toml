@@ -38,6 +38,7 @@ pytorch-cu128-alimirror = "pip install --force-reinstall -f https://mirrors.aliy
 
 [tool.poetry.scripts]
 train = "hwdc_trainer.main:start_train"
+upload_model = "hwdc_trainer.main:upload"
 webui = "hwdc_gradio.main:start_webui"
 
 
