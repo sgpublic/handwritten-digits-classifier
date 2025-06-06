@@ -65,10 +65,12 @@ class HwdcModel:
         logger.info("load model weights...")
         try:
             if use_pretrained:
+                logger.info("downloading model weight...")
                 model_pretrained = hf_hub_download(
                     repo_id=self.repo_id,
                     filename=self.repo_pretrained_model,
                 )
+                logger.info("download model weight finished")
                 state_dict = torch.load(model_pretrained)
             else:
                 if not os.path.exists(self.model_local) or not os.path.isfile(self.model_local):

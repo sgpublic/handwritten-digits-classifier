@@ -36,15 +36,15 @@ class HwdcModelTrainer(HwdcModel):
         for index in range(epochs):
             logger.info(f"epoch [{index + 1}/{epochs}]...")
             avg_loss = self._real_train(train_loader=train_loader, criterion=criterion, optimizer=optimizer)
-            logger.info(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.4f}")
+            logger.info(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.6f}")
             save_interval += 1
             if best_loss is None:
                 best_loss = avg_loss
             if best_loss < avg_loss:
                 logger.info("loss increased, skip saving model weight")
                 continue
-            if save_interval >= HWDC_MODEL_SAVE_INTERVAL == 0:
-                logger.info("save model weight...")
+            if save_interval >= HWDC_MODEL_SAVE_INTERVAL:
+                logger.info("loss decreased, save model weight")
                 save_interval = 0
                 self.save()
         self.resnet_model.eval()
