@@ -31,14 +31,17 @@ class HwdcModel:
 
     @staticmethod
     def _create_empty_model() -> ResNet:
+        # model = torchvision.models.resnet18(
+        #     num_classes=10,
+        # )
         model = _resnet(
             block=BasicBlock,
-            layers=[2, 2, 0, 0],
+            layers=[1, 1, 1, 1],
             weights=None,
             progress=True,
             num_classes=10
         )
-        model.conv1 = nn.Conv2d(1, model.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
+        model.conv1 = nn.Conv2d(1, 64, kernel_size=5, stride=1, padding=2, bias=False)
         return model
 
     def load(self) -> bool:
@@ -52,15 +55,19 @@ class HwdcModel:
                 state_dict = torch.load(model_pretrained)
             else:
                 if not os.path.exists(self._model_local) or not os.path.isfile(self._model_local):
-                    logger.warn("weights not exist!")
-                    return False
+                    raise FileNotFoundError("weights not exist!")
                 shutil.copy(self._model_local, f"{self._model_local}.bak")
                 state_dict = torch.load(self._model_local)
 
             self._resnet_model.load_state_dict(state_dict)
-            self._resnet_model.to(self._device)
 
+            logger.info("load model finished")
             return True
+        except FileNotFoundError:
+            logger.warn("weights not exist!")
+            return False
         except Exception:
             logger.exception("weights load failed!")
             return False
+        finally:
+            self._resnet_model.to(self._device)

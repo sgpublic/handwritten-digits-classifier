@@ -1,6 +1,6 @@
 import torch
 from huggingface_hub import upload_file
-from torch import nn, optim
+from torch import nn, optim, Tensor
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -29,15 +29,15 @@ class HwdcModelTrainer(HwdcModel):
         self._resnet_model.train()
         for index in range(epochs):
             avg_loss = self._real_train(train_loader=train_loader, criterion=criterion, optimizer=optimizer)
-            print(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.4f}")
+            logger.info(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.4f}")
         self._resnet_model.eval()
         logger.info("training finished")
 
     def _real_train(self, train_loader: DataLoader, criterion: _WeightedLoss, optimizer: Optimizer) -> float:
         total_loss = 0
         for batch in train_loader:
-            inputs, labels = batch["image"], batch["label"]
-            inputs, labels = inputs.to(self._device), labels.to(self._device)
+            inputs: Tensor = batch["image"].to(self._device)
+            labels: Tensor = batch["label"].to(self._device)
 
             optimizer.zero_grad()
             outputs = self._resnet_model(inputs)

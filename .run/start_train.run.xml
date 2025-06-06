@@ -8,7 +8,6 @@
       <env name="HWDC_DEBUG" value="n" />
       <env name="HWDC_DEVICE" value="cuda" />
       <env name="PYTHONUNBUFFERED" value="1" />
-      <env name="HWDC_DATASET_SKIP_VALIDATE" value="y" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="SDK_NAME" value="handwritten-digits-classifier" />

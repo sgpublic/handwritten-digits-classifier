@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 from datasets import DownloadConfig, load_dataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -16,11 +16,10 @@ _transform = transforms.ToTensor()
 
 
 def mnist_encode(batch: any):
-    print(batch)
-    images = [np.array(img) for img in batch["image"]]
+    images = [_transform(img.convert("L")) for img in batch["image"]]
     return {
-        "image": images,
-        "label": batch["label"],
+        "image": torch.stack(images),
+        "label": torch.tensor(batch["label"]),
     }
 
 
