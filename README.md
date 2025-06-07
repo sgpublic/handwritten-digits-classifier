@@ -26,8 +26,7 @@ poetry run train
 启动 WebUI：
 
 ```shell
-poetry run webui_local # 使用本地训练的模型
-poetry run webui_pretrained # 使预训练模型
+poetry run webui
 ```
 
 环境变量：
