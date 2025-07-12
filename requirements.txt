@@ -1,9 +1,0 @@
-gradio>=5.33.0,<6.0.0
-huggingface-hub>=0.32.4,<1.0.0
-datasets[vision]>=3.6.0,<4.0.0
-pooch>=1.8.2,<2.0.0
-
-wheel>=0.45.1,<1.0.0
-setuptools>=75.8.0,<76.0.0
-pip>=24.3,<25.0
-poethepoet>=0.32.2,<1.0.0

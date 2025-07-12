@@ -195,3 +195,5 @@ cython_debug/
 .cursorindexingignore
 
 model/
+# pixi environments
+.pixi

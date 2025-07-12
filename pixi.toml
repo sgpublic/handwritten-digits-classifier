@@ -1,0 +1,41 @@
+[workspace]
+name = "handwritten-digits-classifier"
+version = "0.1.0"
+description = "Hand written digits classifier"
+authors = ["Haven Madray <sgpublic2002@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+channels = ["nvidia", "conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[dependencies]
+python = "3.10.*"
+pixi-pycharm = ">=0.0.8, <0.0.9"
+cuda-toolkit = ">=12.8,<12.9"
+cudnn = ">9,<10"
+
+[pypi-dependencies]
+gradio = ">=5.36.2,<5.37"
+huggingface-hub = ">=0.33.4,<0.34"
+datasets = {extras = ["vision"], version = ">=4.0.0,<4.1"}
+pooch = ">=1.8.2,<1.9"
+
+[feature.gpu.system-requirements]
+cuda = "12.8"
+
+[feature.gpu.pypi-dependencies]
+torch = { version = ">=2.7.1, <2.8", index = "https://download.pytorch.org/whl/cu128" }
+torchvision = { version = ">=0.22.1, <0.23", index = "https://download.pytorch.org/whl/cu128" }
+
+[feature.cpu.pypi-dependencies]
+torch = { version = ">=2.7.1, <2.8", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = ">=0.22.1, <0.23", index = "https://download.pytorch.org/whl/cpu" }
+
+[environments]
+cpu = { features = ["cpu"] }
+default = { features = ["gpu"] }
+
+[tasks]
+train = { cmd = "python -m hwdc_trainer.main" }
+upload_model = { cmd = "python -m hwdc_trainer.main" }
+webui = { cmd = "python -m hwdc_gradio.main" }
