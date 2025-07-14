@@ -9,9 +9,8 @@ _transform = transforms.ToTensor()
 def image_to_tenser(image: Image) -> Tensor:
     return _transform(image.convert("L"))
 
-
-def image_to_batch_tenser(image: Image) -> Tensor:
-    return image_to_tenser(image).unsqueeze(0)
+def images_to_batch_tenser(image: list[Image]) -> Tensor:
+    return torch.stack([image_to_tenser(image) for image in image])
 
 
 def batch_to_tensor(batch: any) -> dict[str, Tensor]:

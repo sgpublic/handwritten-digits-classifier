@@ -1,11 +1,12 @@
 import gradio
 
+from hwdc.core.logger import create_logger
 from hwdc.hwdc_model import HwdcModel
-from hwdc_gradio.config import HWDC_MODEL_USE_PRETRAINED
+from hwdc_gradio.config import HWDC_MODEL_USE_PRETRAINED, HWDC_GRADIO_PORT, HWDC_GRADIO_HOST
 
+logger = create_logger(__name__)
 
 class HwdcGradioApp:
-
     def __init__(self):
         self._gradio = self._create_gradio()
         self._model = HwdcModel()
@@ -24,16 +25,17 @@ class HwdcGradioApp:
                     show_share_button=False,
                 )
                 result_box = gradio.Textbox(label="预测结果", interactive=False)
-                sketchpad.change(self.predict, inputs=[sketchpad], outputs=result_box)
+                sketchpad.change(self._predict, inputs=[sketchpad], outputs=result_box)
         return demo
 
     def launch(self):
         self._model.load(HWDC_MODEL_USE_PRETRAINED)
-        self._gradio.launch()
+        self._gradio.launch(server_name=HWDC_GRADIO_HOST, server_port=HWDC_GRADIO_PORT)
 
-    def predict(self, sketchpad: dict) -> int | None:
+    def _predict(self, sketchpad: dict) -> int | None:
         if sketchpad["composite"] is not None:
-            predicted_number, confidence = self._model.predict(sketchpad["composite"])
+            processed_image = self._model.preprocess([sketchpad["composite"]])
+            predicted_number, _ = self._model.predict(processed_image)[0]
             return predicted_number
         else:
             return None

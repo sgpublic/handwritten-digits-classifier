@@ -1,16 +1,17 @@
 import os.path
 import shutil
 
+import numpy
 import torch
 from PIL import Image, ImageOps
 from huggingface_hub import hf_hub_download
-from torch import nn
+from torch import nn, Tensor
 from torchvision.models.resnet import _resnet, BasicBlock, ResNet
 
 from hwdc.core.config import HWDC_DEVICE
 from hwdc.core.logger import create_logger
 from hwdc.core.resource import hwdc_path
-from hwdc.core.tensor import image_to_batch_tenser
+from hwdc.core.tensor import images_to_batch_tenser
 
 logger = create_logger(__name__)
 
@@ -24,6 +25,10 @@ class HwdcModel:
     def repo_pretrained_model(self):
         return "hwdc_pretrained.pth"
 
+    @property
+    def repo_pretrained_model(self):
+        return "hwdc_pretrained.onnx"
+
     def __init__(self):
         self._resnet_model = self._create_empty_model()
         _device = HWDC_DEVICE
@@ -32,10 +37,15 @@ class HwdcModel:
             _device = "cpu"
         self._device = torch.device(_device)
         self._model_local = hwdc_path("./model/hwdc_local.pth")
+        self._model_onnx = hwdc_path("./model/hwdc_local.onnx")
 
     @property
     def model_local(self):
         return self._model_local
+
+    @property
+    def model_onnx(self):
+        return self._model_onnx
 
     @property
     def resnet_model(self):
@@ -90,21 +100,33 @@ class HwdcModel:
             self.move_to_device(self.resnet_model)
             self.resnet_model.eval()
 
-    def preprocess(self, image: Image) -> Image:
-        payload = image.resize((28, 28), Image.LANCZOS)
-        payload = ImageOps.invert(payload)
+    def preprocess(self, images: list[Image]) -> Tensor:
+        payload = [image.resize((28, 28), Image.LANCZOS) for image in images]
+        payload = [ImageOps.invert(image) for image in payload]
+        payload = images_to_batch_tenser(payload)
         return payload
 
-    def predict(self, image: Image) -> tuple[int, float]:
-        payload = self.preprocess(image)
-        payload = image_to_batch_tenser(payload)
-        payload = self.move_to_device(payload)
-        model_output = self.resnet_model(payload)
-        logger.debug(f"model_output: {model_output}")
+    def predict(self, payload: Tensor) -> list[tuple[int, float]]:
+        with torch.no_grad():
+            payload = self.move_to_device(payload)
+            model_output = self.resnet_model(payload)
+            probs = torch.softmax(model_output, dim=1)
+            values, indices = torch.max(probs, dim=1)
+            return list(zip(indices.tolist(), values.tolist()))
 
-        probabilities = torch.softmax(model_output, dim=1)
-        predicted_number = torch.argmax(probabilities, dim=1).item()
-        confidence = probabilities[0, predicted_number].item()
-        logger.info(f"predicted result: {predicted_number}, confidence: {confidence:.2%}")
-
-        return predicted_number, confidence
+    def export_as_onnx(self):
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 1, 28, 28)
+            torch.onnx.export(
+                self.resnet_model,
+                dummy_input,
+                self.model_onnx,
+                input_names=["input"],
+                output_names=["output"],
+                dynamic_axes={
+                    "input": {0: "batch_size"},
+                    "output": {0: "batch_size"},
+                },
+                opset_version=12,
+                verbose=True,
+            )

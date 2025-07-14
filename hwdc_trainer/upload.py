@@ -4,6 +4,7 @@ def upload():
     trainer = HwdcModelTrainer()
     trainer.load(use_pretrained=False)
     trainer.upload()
+    trainer.upload_onnx()
 
 if __name__ == '__main__':
     upload()

@@ -13,9 +13,11 @@ python = "3.10.*"
 pixi-pycharm = ">=0.0.8, <0.0.9"
 cuda-toolkit = ">=12.8,<12.9"
 cudnn = ">9,<10"
+numpy = ">=2.2.6,<3"
+onnx = ">=1.18.0,<2"
 
 [pypi-dependencies]
-gradio = ">=5.36.2,<5.37"
+gradio = ">=5.33.0,<5.34"
 huggingface-hub = ">=0.33.4,<0.34"
 datasets = {extras = ["vision"], version = ">=4.0.0,<4.1"}
 pooch = ">=1.8.2,<1.9"
@@ -36,6 +38,7 @@ cpu = { features = ["cpu"] }
 default = { features = ["gpu"] }
 
 [tasks]
-train = { cmd = "python -m hwdc_trainer.main" }
-upload_model = { cmd = "python -m hwdc_trainer.main" }
+train = { cmd = "python -m hwdc_trainer.train" }
+export_onnx = { cmd = "python -m hwdc_trainer.pth2onnx" }
+upload_model = { cmd = "python -m hwdc_trainer.upload" }
 webui = { cmd = "python -m hwdc_gradio.main" }
