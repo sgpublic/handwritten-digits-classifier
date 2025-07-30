@@ -5,6 +5,11 @@
 + [MNIST](https://huggingface.co/datasets/ylecun/mnist)
 + [CIFAR-10](https://huggingface.co/datasets/uoft-cs/cifar10)
 
+使用模型：
+
++ ResNet
++ VGG
+
 ## 开发环境
 
 + Debian 12
@@ -28,8 +33,8 @@ pixi install --environment cpu
 开始训练：
 
 ```shell
-CORE_DEVICE=cuda pixi run train # 使用 GPU 训练
-CORE_DEVICE=cpu pixi run train --environment cpu # 使用 CPU 训练
+CORE_DEVICE=cuda pixi run train_mnist_resnet # 使用 GPU 训练
+CORE_DEVICE=cpu pixi run train_mnist_resnet --environment cpu # 使用 CPU 训练
 ```
 
 启动 WebUI：
