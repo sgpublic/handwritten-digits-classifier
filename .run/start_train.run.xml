@@ -6,10 +6,11 @@
     <option name="PARENT_ENVS" value="true" />
     <envs>
       <env name="HF_ENDPOINT" value="https://hf-mirror.com" />
+      <env name="HWDC_DATASET_TEST_DATASET_SIZE" value="5000" />
       <env name="HWDC_DEBUG" value="n" />
       <env name="HWDC_DEVICE" value="cuda" />
       <env name="PYTHONUNBUFFERED" value="1" />
-      <env name="HWDC_DATASET_TEST_DATASET_SIZE" value="5000" />
+      <env name="HWDC_MODEL_ACCURACY_THRESHOLD" value="0.995" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="SDK_NAME" value="HandWriteNumberClassifier[default]" />

@@ -22,10 +22,10 @@ huggingface-hub = ">=0.33.4,<0.34"
 datasets = {extras = ["vision"], version = ">=4.0.0,<4.1"}
 pooch = ">=1.8.2,<1.9"
 
-[feature.gpu.system-requirements]
+[feature.cuda.system-requirements]
 cuda = "12.8"
 
-[feature.gpu.pypi-dependencies]
+[feature.cuda.pypi-dependencies]
 torch = { version = ">=2.7.1, <2.8", index = "https://download.pytorch.org/whl/cu128" }
 torchvision = { version = ">=0.22.1, <0.23", index = "https://download.pytorch.org/whl/cu128" }
 
@@ -35,7 +35,7 @@ torchvision = { version = ">=0.22.1, <0.23", index = "https://download.pytorch.o
 
 [environments]
 cpu = { features = ["cpu"] }
-default = { features = ["gpu"] }
+default = { features = ["cuda"] }
 
 [tasks]
 train = { cmd = "python -m hwdc_trainer.train" }

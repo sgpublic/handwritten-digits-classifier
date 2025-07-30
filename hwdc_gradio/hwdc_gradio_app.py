@@ -23,6 +23,8 @@ class HwdcGradioApp:
                     layers=False,
                     fixed_canvas=True,
                     show_share_button=False,
+                    height=420,
+                    width=420,
                 )
                 result_box = gradio.Textbox(label="预测结果", interactive=False)
                 sketchpad.change(self._predict, inputs=[sketchpad], outputs=result_box)

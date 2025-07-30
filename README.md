@@ -25,14 +25,14 @@ pixi install --environment cpu
 开始训练：
 
 ```shell
-HWDC_DEVICE=gpu pixi run train # 使用 GPU 训练
+HWDC_DEVICE=cuda pixi run train # 使用 GPU 训练
 HWDC_DEVICE=cpu pixi run train --environment cpu # 使用 CPU 训练
 ```
 
 启动 WebUI：
 
 ```shell
-HWDC_DEVICE=gpu pixi run webui # 使用 GPU 推理
+HWDC_DEVICE=cuda pixi run webui # 使用 GPU 推理
 HWDC_DEVICE=cpu pixi run webui --environment cpu # 使用 CPU 推理
 ```
 
