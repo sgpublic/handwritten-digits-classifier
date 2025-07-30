@@ -1,0 +1,29 @@
+from abc import ABC, abstractmethod
+
+from PIL.Image import Image
+from torch import Tensor
+
+from vision_models.core.model import Model
+from vision_models.gradio_app.config import GRADIO_MODEL_USE_PRETRAINED, GRADIO_LISTEN_HOST, GRADIO_LISTEN_PORT
+
+
+class GradioApp(ABC):
+    def __init__(self):
+        self._gradio = self._create_gradio()
+        self._model = self._load_model()
+
+    @abstractmethod
+    def _load_model(self) -> Model:
+        pass
+
+    @abstractmethod
+    def _create_gradio(self):
+        pass
+
+    def _real_predict(self, payload: Image) -> tuple[int, float]:
+        processed_image = self._model.preprocess([payload])
+        return self._model.predict(payload=processed_image)[0]
+
+    def launch(self):
+        self._model.load_weight(use_pretrained=GRADIO_MODEL_USE_PRETRAINED)
+        self._gradio.launch(server_name=GRADIO_LISTEN_HOST, server_port=GRADIO_LISTEN_PORT)

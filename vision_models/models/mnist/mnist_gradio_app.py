@@ -1,15 +1,19 @@
+from typing import Optional
+
+from PIL import ImageOps
+
 import gradio
 
-from hwdc.core.logger import create_logger
-from hwdc.hwdc_model import HwdcModel
-from hwdc_gradio.config import HWDC_MODEL_USE_PRETRAINED, HWDC_GRADIO_PORT, HWDC_GRADIO_HOST
+from vision_models.core.model import Model
+from vision_models.core.utils.logger import create_logger
+from vision_models.gradio_app.gradio_app import GradioApp
+from vision_models.models.mnist.mnist_model import MnistModel
 
 logger = create_logger(__name__)
 
-class HwdcGradioApp:
-    def __init__(self):
-        self._gradio = self._create_gradio()
-        self._model = HwdcModel()
+class MnistGradioApp(GradioApp):
+    def _load_model(self) -> Model:
+        return MnistModel()
 
     def _create_gradio(self):
         with gradio.Blocks() as demo:
@@ -30,15 +34,8 @@ class HwdcGradioApp:
                 sketchpad.change(self._predict, inputs=[sketchpad], outputs=result_box)
         return demo
 
-    def launch(self):
-        self._model.load(HWDC_MODEL_USE_PRETRAINED)
-        self._gradio.launch(server_name=HWDC_GRADIO_HOST, server_port=HWDC_GRADIO_PORT)
-
-    def _predict(self, sketchpad: dict) -> int | None:
-        if sketchpad["composite"] is not None:
-            processed_image = self._model.preprocess([sketchpad["composite"]])
-            predicted_number, _ = self._model.predict(processed_image)[0]
-            return predicted_number
-        else:
+    def _predict(self, sketchpad: dict) -> Optional[int]:
+        if sketchpad["composite"] is None:
             return None
-
+        predicted_number, _ = self._real_predict(ImageOps.invert(sketchpad["composite"]))
+        return predicted_number

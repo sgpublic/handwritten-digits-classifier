@@ -194,6 +194,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-model/
+/model_save/
 # pixi environments
 .pixi

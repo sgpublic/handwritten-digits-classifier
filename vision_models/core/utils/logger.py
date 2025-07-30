@@ -1,8 +1,8 @@
 import logging
 
-from hwdc.core.config import HWDC_DEBUG
+from vision_models.core.config import CORE_DEBUG
 
-if HWDC_DEBUG:
+if CORE_DEBUG:
     logging_level = logging.DEBUG
 else:
     logging_level = logging.INFO

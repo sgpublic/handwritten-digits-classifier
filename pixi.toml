@@ -1,5 +1,5 @@
 [workspace]
-name = "handwritten-digits-classifier"
+name = "vision_models"
 version = "0.1.0"
 description = "Hand written digits classifier"
 authors = ["Haven Madray <sgpublic2002@gmail.com>"]
@@ -38,7 +38,20 @@ cpu = { features = ["cpu"] }
 default = { features = ["cuda"] }
 
 [tasks]
-train = { cmd = "python -m hwdc_trainer.train" }
-export_onnx = { cmd = "python -m hwdc_trainer.pth2onnx" }
-upload_model = { cmd = "python -m hwdc_trainer.upload" }
-webui = { cmd = "python -m hwdc_gradio.main" }
+train = { cmd = ["python", "-m", "vision_models.trainer.train"] }
+train_mnist_resnet = [{ task = "train", env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "ResNet_Custom" } }]
+train_mnist_vgg = [{ task = "train", env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "VGG_Custom" } }]
+train_cifar10_resnet = [{ task = "train", env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "ResNet_Custom" } }]
+train_cifar10_vgg = [{ task = "train", env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "VGG_Custom" } }]
+
+webui = { cmd = ["python", "-m", "vision_models.gradio_app.main"] }
+webui_mnist_resnet = [{ task = "webui", env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "ResNet_Custom" } }]
+webui_mnist_vgg = [{ task = "webui", env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "VGG_Custom" } }]
+webui_cifar10_resnet = [{ task = "webui", env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "ResNet_Custom" } }]
+webui_cifar10_vgg = [{ task = "webui", env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "VGG_Custom" } }]
+
+upload = { cmd = ["python", "-m", "vision_models.trainer.upload"] }
+upload_mnist_resnet = [{ task = "upload", env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "ResNet_Custom" } }]
+upload_mnist_vgg = [{ task = "upload", env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "VGG_Custom" } }]
+upload_cifar10_resnet = [{ task = "upload", env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "ResNet_Custom" } }]
+upload_cifar10_vgg = [{ task = "upload", env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "VGG_Custom" } }]
