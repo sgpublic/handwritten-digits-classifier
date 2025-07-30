@@ -1,6 +1,5 @@
 import os.path
 import shutil
-from enum import Enum
 
 import torch
 from PIL import Image, ImageOps
@@ -13,12 +12,9 @@ from hwdc.core.config import HWDC_DEVICE, HWDC_MODEL_TYPE
 from hwdc.core.logger import create_logger
 from hwdc.core.resource import hwdc_path
 from hwdc.core.tensor import images_to_batch_tenser
+from hwdc.hwdc_model_type import HwdcModelType
 
 logger = create_logger(__name__)
-
-class HwdcModelType(Enum):
-    ResNet = "resnet"
-    VGG = "vgg"
 
 
 class HwdcModel:
@@ -43,8 +39,8 @@ class HwdcModel:
             _device = "cpu"
         self._device = torch.device(_device)
         self._model_base_path = hwdc_path(f"./model/{self._model_type.value}")
-        self._model_local = hwdc_path("hwdc_local.pth", self._model_base_path)
-        self._model_onnx = hwdc_path("hwdc_local.onnx", self._model_base_path)
+        self._model_local = hwdc_path("./hwdc_local.pth", self._model_base_path)
+        self._model_onnx = hwdc_path("./hwdc_local.onnx", self._model_base_path)
 
     @property
     def model_local(self):
@@ -82,6 +78,8 @@ class HwdcModel:
             num_classes=10
         )
         model.conv1 = nn.Conv2d(1, 64, kernel_size=5, stride=1, padding=2, bias=False)
+        # 换用 LeakyReLU 以解决 ReLU 的神经元死亡问题
+        model.relu = nn.LeakyReLU(inplace=True)
         return model
 
     def load(self, use_pretrained: bool = True) -> bool:
