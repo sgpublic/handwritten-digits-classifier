@@ -1,6 +1,9 @@
 import random
+from typing import Optional, Callable
 
+from PIL.Image import Image
 from datasets import DownloadConfig, load_dataset
+from torch import Tensor
 from torch.utils.data import DataLoader
 from datasets.arrow_dataset import Dataset
 
@@ -30,15 +33,21 @@ def mnist_dataset(
 def mnist_dataset_loader(
         split: str = "train",
         batch_size: int = 1000,
-        dataset_size: int = None,
+        dataset_size: Optional[int] = None,
+        pre_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+        post_transform: Optional[list[Callable[[Image], Tensor]]] = None,
 ) -> DataLoader:
+    if post_transform is None:
+        post_transform = []
+    if pre_transform is None:
+        pre_transform = []
     logger.info(f"loading mnist dataset[{split}]...")
     dataset = mnist_dataset(
         split=split,
         dataset_size=dataset_size
     )
     dataset = dataset.with_transform(
-        transform=batch_to_tensor,
+        transform=lambda x: batch_to_tensor(x, post_transform, pre_transform),
         columns=["image", "label"],
     )
     logger.info(f"load mnist dataset[{split}] finished")

@@ -2,14 +2,16 @@ import os
 
 import numpy
 import torch
+from torchvision import transforms
 from huggingface_hub import upload_file
 from torch import nn, optim
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from hwdc.core.config import HWDC_DATASET_MAX_EPOCHS, HWDC_DATASET_BATCH_SIZE, \
-    HWDC_DATASET_TEST_DATASET_SIZE, HWDC_MODEL_ACCURACY_THRESHOLD
+from hwdc_trainer.config import HWDC_DATASET_MAX_EPOCHS, HWDC_DATASET_BATCH_SIZE, \
+    HWDC_DATASET_TEST_DATASET_SIZE, HWDC_MODEL_ACCURACY_THRESHOLD, HWDC_DATASET_RANDOM_ROTATE, \
+    HWDC_DATASET_RANDOM_SCALE, HWDC_DATASET_RANDOM_ELASTIC_ALPHA, HWDC_DATASET_RANDOM_ELASTIC_SIGMA, HWDC_LEARN_RATE
 from hwdc.core.logger import create_logger
 from hwdc.core.strings import arr2str, float2str
 from hwdc.hwdc_model import HwdcModel
@@ -21,6 +23,16 @@ logger = create_logger(__name__)
 class HwdcModelTrainer(HwdcModel):
     def __init__(self):
         super().__init__()
+        random_rotate = HWDC_DATASET_RANDOM_ROTATE
+        random_scale = HWDC_DATASET_RANDOM_SCALE
+        random_elastic_alpha = HWDC_DATASET_RANDOM_ELASTIC_ALPHA
+        random_elastic_sigma = HWDC_DATASET_RANDOM_ELASTIC_SIGMA
+        self._pre_transform = [
+            # 加入随机缩放和旋转
+            transforms.RandomAffine(degrees=(0-random_rotate, 0+random_rotate), scale=(1.0-random_scale, 1.0+random_scale)),
+            # 加入随机变形
+            transforms.ElasticTransform(alpha=random_elastic_alpha, sigma=random_elastic_sigma),
+        ]
 
     def train(self,
               epochs: int = HWDC_DATASET_MAX_EPOCHS,
@@ -28,13 +40,13 @@ class HwdcModelTrainer(HwdcModel):
               test_dataset_size: int = HWDC_DATASET_TEST_DATASET_SIZE,
               accuracy_threshold: float = HWDC_MODEL_ACCURACY_THRESHOLD):
         logger.info("prepare training")
-        train_loader = mnist_dataset_loader(split="train", batch_size=batch_size)
+        train_loader = mnist_dataset_loader(split="train", batch_size=batch_size, pre_transform=self._pre_transform)
 
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.resnet_model.parameters(), lr=1e-3)
+        optimizer = optim.Adam(self.model.parameters(), lr=HWDC_LEARN_RATE)
 
         logger.info("start training")
-        self.resnet_model.train()
+        self.model.train()
         best_loss = None
         for index in range(epochs):
             logger.info(f"epoch [{index + 1}/{epochs}]...")
@@ -53,12 +65,12 @@ class HwdcModelTrainer(HwdcModel):
             self.save()
 
             # 要求每个数字的准确率都达到预期
-            if all(x >= accuracy_threshold for x in current_accuracy):
+            # if all(x >= accuracy_threshold for x in current_accuracy):
             # 要求平均准确率达到预期
-            # if avg_accuracy >= accuracy_threshold:
+            if avg_accuracy >= accuracy_threshold:
                 logger.info("When the accuracy requirement is met, stop training.")
                 break
-        self.resnet_model.eval()
+        self.model.eval()
         self.save()
         logger.info("training finished")
 
@@ -69,7 +81,7 @@ class HwdcModelTrainer(HwdcModel):
             inputs, labels = self.move_to_device(inputs), self.move_to_device(labels)
 
             optimizer.zero_grad()
-            outputs = self.resnet_model(inputs)
+            outputs = self.model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -78,7 +90,7 @@ class HwdcModelTrainer(HwdcModel):
 
         return total_loss / len(train_loader)
 
-    def _test(self, test_size: int = 1000) -> tuple[float, list[float]]:
+    def _test(self, test_size: int = 10000) -> tuple[float, list[float]]:
         with torch.no_grad():
             total_count = numpy.zeros(10, dtype=numpy.int32)
             total_correct = numpy.zeros(10, dtype=numpy.int32)
@@ -95,19 +107,19 @@ class HwdcModelTrainer(HwdcModel):
 
 
     def save(self) -> bool:
-        still_training = self.resnet_model.training
+        still_training = self.model.training
         if still_training:
-            self.resnet_model.eval()
+            self.model.eval()
         try:
             os.makedirs(name=os.path.dirname(self.model_local), exist_ok=True)
-            torch.save(self.resnet_model.state_dict(), self.model_local)
+            torch.save(self.model.state_dict(), self.model_local)
             return True
         except Exception:
             logger.exception("weight save failed!")
             return False
         finally:
             if still_training:
-                self.resnet_model.train()
+                self.model.train()
 
     def upload(self):
         try:

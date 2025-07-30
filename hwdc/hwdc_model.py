@@ -1,19 +1,24 @@
 import os.path
 import shutil
+from enum import Enum
 
-import numpy
 import torch
 from PIL import Image, ImageOps
 from huggingface_hub import hf_hub_download
 from torch import nn, Tensor
+from torch.nn import Module
 from torchvision.models.resnet import _resnet, BasicBlock, ResNet
 
-from hwdc.core.config import HWDC_DEVICE
+from hwdc.core.config import HWDC_DEVICE, HWDC_MODEL_TYPE
 from hwdc.core.logger import create_logger
 from hwdc.core.resource import hwdc_path
 from hwdc.core.tensor import images_to_batch_tenser
 
 logger = create_logger(__name__)
+
+class HwdcModelType(Enum):
+    ResNet = "resnet"
+    VGG = "vgg"
 
 
 class HwdcModel:
@@ -23,21 +28,23 @@ class HwdcModel:
 
     @property
     def repo_pretrained_model(self):
-        return "hwdc_pretrained.pth"
+        return f"{self._model_type.value}/hwdc_pretrained.pth"
 
     @property
     def repo_pretrained_model(self):
-        return "hwdc_pretrained.onnx"
+        return f"{self._model_type.value}/hwdc_pretrained.onnx"
 
     def __init__(self):
-        self._resnet_model = self._create_empty_model()
+        self._model_type = HWDC_MODEL_TYPE
+        self._model = self._create_empty_model(self._model_type)
         _device = HWDC_DEVICE
         if _device == "cuda" and not torch.cuda.is_available():
             logger.warn("cuda is not available, use cpu as fallback.")
             _device = "cpu"
         self._device = torch.device(_device)
-        self._model_local = hwdc_path("./model/hwdc_local.pth")
-        self._model_onnx = hwdc_path("./model/hwdc_local.onnx")
+        self._model_base_path = hwdc_path(f"./model/{self._model_type.value}")
+        self._model_local = hwdc_path("hwdc_local.pth", self._model_base_path)
+        self._model_onnx = hwdc_path("hwdc_local.onnx", self._model_base_path)
 
     @property
     def model_local(self):
@@ -48,17 +55,25 @@ class HwdcModel:
         return self._model_onnx
 
     @property
-    def resnet_model(self):
-        return self._resnet_model
+    def model(self) -> Module:
+        return self._model
+
+    @property
+    def model_type(self) -> HwdcModelType:
+        return self._model_type
 
     def move_to_device(self, obj: any):
         return obj.to(self._device)
 
     @staticmethod
-    def _create_empty_model() -> ResNet:
-        # model = torchvision.models.resnet18(
-        #     num_classes=10,
-        # )
+    def _create_empty_model(model_type: HwdcModelType) -> Module:
+        logger.info(f"create model of type {model_type.name}")
+        if model_type == HwdcModelType.ResNet:
+            return HwdcModel._create_empty_resnet_model()
+        return None
+
+    @staticmethod
+    def _create_empty_resnet_model() -> ResNet:
         model = _resnet(
             block=BasicBlock,
             layers=[1, 1, 1, 1],
@@ -86,7 +101,7 @@ class HwdcModel:
                 shutil.copy(self.model_local, f"{self.model_local}.bak")
                 state_dict = torch.load(self.model_local)
 
-            self.resnet_model.load_state_dict(state_dict)
+            self.model.load_state_dict(state_dict)
 
             logger.info("load model finished")
             return True
@@ -97,8 +112,8 @@ class HwdcModel:
             logger.exception("weights load failed!")
             return False
         finally:
-            self.move_to_device(self.resnet_model)
-            self.resnet_model.eval()
+            self.move_to_device(self.model)
+            self.model.eval()
 
     def preprocess(self, images: list[Image]) -> Tensor:
         payload = [image.resize((28, 28), Image.LANCZOS) for image in images]
@@ -109,7 +124,7 @@ class HwdcModel:
     def predict(self, payload: Tensor) -> list[tuple[int, float]]:
         with torch.no_grad():
             payload = self.move_to_device(payload)
-            model_output = self.resnet_model(payload)
+            model_output = self.model(payload)
             probs = torch.softmax(model_output, dim=1)
             values, indices = torch.max(probs, dim=1)
             return list(zip(indices.tolist(), values.tolist()))
@@ -118,7 +133,7 @@ class HwdcModel:
         with torch.no_grad():
             dummy_input = torch.randn(1, 1, 28, 28)
             torch.onnx.export(
-                self.resnet_model,
+                self.model,
                 dummy_input,
                 self.model_onnx,
                 input_names=["input"],

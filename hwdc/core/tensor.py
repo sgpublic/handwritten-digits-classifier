@@ -1,22 +1,45 @@
+from typing import Callable, Optional
+
 import torch
-from PIL import Image
+from PIL.Image import Image
 from torch import Tensor
 from torchvision import transforms
 
-_transform = transforms.ToTensor()
+def image_to_tenser(
+        image: Image,
+        pre_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+        post_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+) -> Tensor:
+    if post_transform is None:
+        post_transform = []
+    if pre_transform is None:
+        pre_transform = []
+    transform = transforms.Compose(pre_transform + [transforms.ToTensor()] + post_transform)
+    return transform(image.convert("L"))
 
+def images_to_batch_tenser(
+        images: list[Image],
+        pre_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+        post_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+) -> Tensor:
+    if post_transform is None:
+        post_transform = []
+    if pre_transform is None:
+        pre_transform = []
+    return torch.stack([image_to_tenser(image, post_transform, pre_transform) for image in images])
 
-def image_to_tenser(image: Image) -> Tensor:
-    return _transform(image.convert("L"))
-
-def images_to_batch_tenser(image: list[Image]) -> Tensor:
-    return torch.stack([image_to_tenser(image) for image in image])
-
-
-def batch_to_tensor(batch: any) -> dict[str, Tensor]:
-    inputs = [image_to_tenser(img) for img in batch["image"]]
+def batch_to_tensor(
+        batch: dict,
+        pre_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+        post_transform: Optional[list[Callable[[Image], Tensor]]] = None,
+) -> Tensor:
+    if post_transform is None:
+        post_transform = []
+    if pre_transform is None:
+        pre_transform = []
+    inputs = images_to_batch_tenser(batch["image"], post_transform, pre_transform)
     labels = torch.tensor(batch["label"])
     return {
-        "image": torch.stack(inputs),
+        "image": inputs,
         "label": labels,
     }
