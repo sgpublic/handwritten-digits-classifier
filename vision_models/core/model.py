@@ -113,7 +113,7 @@ class VisionClassifyModel(Log, ABC):
 
             self.model.load_state_dict(state_dict)
 
-            self.logger.info("load model_save finished")
+            self.logger.info("load model weights finished")
             return True
         except FileNotFoundError:
             self.logger.warn("weights not exist!")

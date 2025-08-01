@@ -86,11 +86,11 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
             if best_loss is None:
                 best_loss = avg_loss
             if best_loss < avg_loss:
-                self.logger.info("loss increased, skip saving model_save weight")
+                self.logger.info("loss increased, skip saving model weights")
                 continue
-            self.logger.info("loss decreased, save model_save weight")
+            self.logger.info("loss decreased, save model weights")
             if not self.save():
-                self.logger.exception("failed to save weight, stop training")
+                self.logger.exception("failed to save model weights, stop training")
                 break
 
             # 要求每个数字的准确率都达到预期
@@ -169,7 +169,7 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
 
     def upload(self, model_type: ModelSaveType):
         try:
-            self.logger.info(f"uploading .{model_type.value} model_save...")
+            self.logger.info(f"uploading .{model_type.value} model weights...")
             upload_file(
                 path_or_fileobj=self.model_local(model_type=model_type),
                 path_in_repo=self.repo_pretrained_model(model_type=model_type),
@@ -177,4 +177,4 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                 repo_type="model",
             )
         except Exception:
-            self.logger.exception(f"upload .{model_type.value} model_save failed")
+            self.logger.exception(f"upload .{model_type.value} model weights failed")
