@@ -12,12 +12,13 @@ from vision_models.core.utils.tensor import batch_to_tensor
 
 logger = create_logger(__name__)
 
-def mnist_dataset(
+def load_dataset(
+    path: str,
     split: str = "train",
     dataset_size: int = None,
 ) -> Dataset:
     dataset = load_dataset(
-        path="mnist",
+        path=path,
         download_config=DownloadConfig(
             resume_download=True,
             force_download=False,
@@ -30,15 +31,17 @@ def mnist_dataset(
 
 # https://huggingface.co/datasets/ylecun/mnist
 # https://huggingface.co/docs/datasets/use_with_pytorch#stream-data
-def mnist_dataset_loader(
-        split: str = "train",
-        batch_size: int = 1000,
-        dataset_size: Optional[int] = None,
-        pre_transform: Optional[list[Callable[[Image], Image]]] = None,
-        post_transform: Optional[list[Callable[[Tensor], Tensor]]] = None,
+def data_loader(
+    path: str,
+    split: str = "train",
+    batch_size: int = 1000,
+    dataset_size: Optional[int] = None,
+    pre_transform: Optional[list[Callable[[Image], Image]]] = None,
+    post_transform: Optional[list[Callable[[Tensor], Tensor]]] = None,
 ) -> DataLoader:
     logger.info(f"loading mnist dataset[{split}]...")
-    dataset = mnist_dataset(
+    dataset = load_dataset(
+        path=path,
         split=split,
         dataset_size=dataset_size
     )

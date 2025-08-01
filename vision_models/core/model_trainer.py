@@ -14,15 +14,20 @@ from torch.utils.data import DataLoader
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.core.utils.logger import create_logger
 from vision_models.core.utils.strings import arr2str, float2str
-from vision_models.core.model import Model
-from vision_models.core.utils.dataset_loader import mnist_dataset_loader
+from vision_models.core.model import VisionClassifyModel
+from vision_models.core.utils.dataset_loader import data_loader
 from vision_models.trainer.config import TRAINER_DATASET_MAX_EPOCHS, TRAINER_DATASET_BATCH_SIZE, TRAINER_DATASET_TEST_DATASET_SIZE, \
     TRAINER_MODEL_ACCURACY_THRESHOLD, TRAINER_LEARN_RATE
 
 logger = create_logger(__name__)
 
 
-class ModelTrainer(Model, ABC):
+class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
+    @property
+    @abstractmethod
+    def dataset_path(self) -> str:
+        pass
+
     @property
     @abstractmethod
     def trainer_pre_transform(self) -> list[Callable[[Image], Image]]:
@@ -44,7 +49,8 @@ class ModelTrainer(Model, ABC):
               accuracy_threshold: float = TRAINER_MODEL_ACCURACY_THRESHOLD,
     ):
         logger.info("prepare training")
-        train_loader = mnist_dataset_loader(
+        train_loader = data_loader(
+            path=self.dataset_path,
             split="train",
             batch_size=batch_size,
             pre_transform=self.pre_transform + self.trainer_pre_transform,
@@ -103,7 +109,12 @@ class ModelTrainer(Model, ABC):
         with torch.no_grad():
             total_count = numpy.zeros(10, dtype=numpy.int32)
             total_correct = numpy.zeros(10, dtype=numpy.int32)
-            test_loader = mnist_dataset_loader(split="test", batch_size=test_size, dataset_size=test_size)
+            test_loader = data_loader(
+                path=self.dataset_path,
+                split="test",
+                batch_size=test_size,
+                dataset_size=test_size
+            )
             # 实际上这个循环只跑一次
             for batch in test_loader:
                 inputs, labels = batch["image"], batch["label"].tolist()

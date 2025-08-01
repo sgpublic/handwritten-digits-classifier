@@ -1,7 +1,7 @@
 import os.path
 import shutil
 from abc import abstractmethod, ABC
-from typing import Callable
+from typing import Callable, Optional
 
 import torch
 from PIL.Image import Image
@@ -10,7 +10,7 @@ from torch import Tensor
 from torch.nn import Module
 from torchvision.models import ResNet, VGG
 
-from vision_models.core.config import CORE_DEVICE, CORE_DATASET_TYPE, CORE_MODEL_TYPE
+from vision_models.core.config import CORE_DEVICE, CORE_DATASET_TYPE, CORE_MODEL_TYPE, CORE_DEBUG
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.core.types.model_type import ModelType
 from vision_models.core.utils.logger import create_logger
@@ -20,7 +20,7 @@ from vision_models.core.utils.tensor import images_to_batch_tenser
 logger = create_logger(__name__)
 
 
-class Model(ABC):
+class VisionClassifyModel(ABC):
     def __init__(self):
         _device = CORE_DEVICE
         if _device == "cuda" and not torch.cuda.is_available():
@@ -29,16 +29,19 @@ class Model(ABC):
         self._device = torch.device(_device)
 
         self._dataset_type = CORE_DATASET_TYPE
-        self._model_type = CORE_MODEL_TYPE
         self._model = self._create_empty_model()
 
     @property
     def model_type(self) -> ModelType:
-        return self._model_type
+        return CORE_MODEL_TYPE
 
     @property
     def repo_id(self) -> str:
         return "mhmzx/vision-models"
+
+    @property
+    def is_debug(self) -> bool:
+        return CORE_DEBUG
 
     def repo_pretrained_model(self, model_type: ModelSaveType) -> str:
         filename = model_type.with_file_name("model_weight")
@@ -60,21 +63,29 @@ class Model(ABC):
         return obj.to(self._device)
 
     def _create_empty_model(self) -> Module:
-        model: Module
+        model: Optional[Module] = None
         match self.model_type:
             case ModelType.ResNet_Custom:
                 model = self._create_empty_resnet_custom_model()
+            case ModelType.ResNetV2_Custom:
+                model = self._create_empty_resnet_v2_custom_model()
             case ModelType.VGG_Custom:
                 model = self._create_empty_vgg_custom_model()
+        if model is None:
+            raise ValueError(f"model_type {self.model_type} not supported!")
         return model
 
-    @abstractmethod
-    def _create_empty_resnet_custom_model(self) -> ResNet:
-        pass
+    # noinspection PyMethodMayBeStatic
+    def _create_empty_resnet_custom_model(self) -> Optional[ResNet]:
+        return None
 
-    @abstractmethod
-    def _create_empty_vgg_custom_model(self) -> VGG:
-        pass
+    # noinspection PyMethodMayBeStatic
+    def _create_empty_resnet_v2_custom_model(self) -> Optional[ResNet]:
+        return None
+
+    # noinspection PyMethodMayBeStatic
+    def _create_empty_vgg_custom_model(self) -> Optional[VGG]:
+        return None
 
     def load_weight(self, use_pretrained: bool = True) -> bool:
         try:

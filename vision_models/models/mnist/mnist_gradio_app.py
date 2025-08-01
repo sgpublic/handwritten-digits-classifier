@@ -4,7 +4,7 @@ from PIL import ImageOps
 
 import gradio
 
-from vision_models.core.model import Model
+from vision_models.core.model import VisionClassifyModel
 from vision_models.core.utils.logger import create_logger
 from vision_models.gradio_app.gradio_app import GradioApp
 from vision_models.models.mnist.mnist_model import MnistModel
@@ -12,7 +12,7 @@ from vision_models.models.mnist.mnist_model import MnistModel
 logger = create_logger(__name__)
 
 class MnistGradioApp(GradioApp):
-    def _load_model(self) -> Model:
+    def _load_model(self) -> VisionClassifyModel:
         return MnistModel()
 
     def _create_gradio(self):

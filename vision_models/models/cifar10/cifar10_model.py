@@ -2,20 +2,16 @@ from typing import Callable
 
 from PIL.Image import Image
 from torch import Tensor
-from torchvision.models import ResNet, VGG
+from torchvision import models
+from torchvision.models import ResNet
 
-from vision_models.core.model import Model
+from vision_models.core.model import VisionClassifyModel
 
 
-class Cifar10Model(Model):
+class Cifar10Model(VisionClassifyModel):
     def _create_empty_resnet_custom_model(self) -> ResNet:
-        pass
-
-    def _create_empty_vgg_custom_model(self) -> VGG:
-        pass
-
-    def save_weight(self):
-        pass
+        model = models.resnet34()
+        return model
 
     @property
     def pre_transform(self) -> list[Callable[[Image], Image]]:
@@ -24,4 +20,3 @@ class Cifar10Model(Model):
     @property
     def post_transform(self) -> list[Callable[[Tensor], Tensor]]:
         return []
-

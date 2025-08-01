@@ -1,16 +1,14 @@
 from typing import Callable
 
-import torch
 from PIL.Image import Image, Resampling
 from torch import Tensor, nn
-from torchvision import models
 from torchvision.models import ResNet, VGG
 from torchvision.models.resnet import _resnet, BasicBlock
 
-from vision_models.core.model import Model
+from vision_models.core.model import VisionClassifyModel
 
 
-class MnistModel(Model):
+class MnistModel(VisionClassifyModel):
     def _create_empty_resnet_custom_model(self) -> ResNet:
         model = _resnet(
             block=BasicBlock,
@@ -25,10 +23,6 @@ class MnistModel(Model):
         model.relu = nn.LeakyReLU(inplace=True)
         # 取消池化，把池化核改为 1x1，步长为 1，填充 0，这样就能实现无池化的效果
         model.maxpool = nn.MaxPool2d(kernel_size=1, stride=1, padding=0)
-        return model
-
-    def _create_empty_vgg_custom_model(self) -> VGG:
-        model = models.vgg16()
         return model
 
     @property

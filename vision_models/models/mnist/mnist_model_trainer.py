@@ -1,33 +1,34 @@
-from typing import Optional, Callable
+from typing import Callable
 
 import torch
 from torch import Tensor
 from torchvision import transforms
 
-from vision_models.core.config import CORE_DEBUG
-from vision_models.core.model_trainer import ModelTrainer
+from vision_models.core.model_trainer import VisionClassifyModelTrainer
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.models.mnist.config import MNIST_DATASET_RANDOM_ROTATE, MNIST_DATASET_RANDOM_SCALE, \
     MNIST_DATASET_RANDOM_ELASTIC_ALPHA, MNIST_DATASET_RANDOM_ELASTIC_SIGMA
 from vision_models.models.mnist.mnist_model import MnistModel
 
 
-class MnistModelTrainer(MnistModel, ModelTrainer):
+class MnistModelTrainer(MnistModel, VisionClassifyModelTrainer):
+    def dataset_path(self) -> str:
+        return "ylecun/mnist"
+
     def _save_as_onnx(self):
-        with torch.no_grad():
-            torch.onnx.export(
-                self.model,
-                self.move_to_device(torch.randn(1, 1, 28, 28)),
-                self.model_local(model_type=ModelSaveType.ONNX),
-                input_names=["input"],
-                output_names=["output"],
-                dynamic_axes={
-                    "input": {0: "batch_size"},
-                    "output": {0: "batch_size"},
-                },
-                opset_version=12,
-                verbose=CORE_DEBUG,
-            )
+        torch.onnx.export(
+            self.model,
+            self.move_to_device(torch.randn(1, 1, 28, 28)),
+            self.model_local(model_type=ModelSaveType.ONNX),
+            input_names=["input"],
+            output_names=["output"],
+            dynamic_axes={
+                "input": {0: "batch_size"},
+                "output": {0: "batch_size"},
+            },
+            opset_version=12,
+            verbose=self.is_debug,
+        )
 
     @property
     def trainer_pre_transform(self) -> list[Callable[[Tensor], Tensor]]:
