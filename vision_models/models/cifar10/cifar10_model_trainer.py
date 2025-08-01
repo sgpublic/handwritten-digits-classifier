@@ -9,6 +9,11 @@ from vision_models.models.cifar10.cifar10_model import Cifar10Model
 
 
 class Cifar10ModelTrainer(Cifar10Model, VisionClassifyModelTrainer):
+    # https://huggingface.co/datasets/uoft-cs/cifar10
+    @property
+    def dataset_path(self) -> str:
+        return "uoft-cs/cifar10"
+
     def _save_as_onnx(self):
         torch.onnx.export(
             self.model,
@@ -23,9 +28,6 @@ class Cifar10ModelTrainer(Cifar10Model, VisionClassifyModelTrainer):
             opset_version=12,
             verbose=self.is_debug,
         )
-
-    def dataset_path(self) -> str:
-        return "uoft-cs/cifar10"
 
     @property
     def trainer_pre_transform(self) -> list[Callable[[Tensor], Tensor]]:

@@ -125,7 +125,6 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                         total_correct[a] += 1
             return float(total_correct.sum() / total_count.sum()), [float(correct / total) for correct, total in zip(total_correct, total_count)]
 
-
     def save(self) -> bool:
         still_training = self.model.training
         if still_training:

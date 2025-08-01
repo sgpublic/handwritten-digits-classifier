@@ -12,10 +12,10 @@ from vision_models.core.utils.tensor import batch_to_tensor
 
 logger = create_logger(__name__)
 
-def load_dataset(
+def _load_dataset(
     path: str,
     split: str = "train",
-    dataset_size: int = None,
+    dataset_size: Optional[int] = None,
 ) -> Dataset:
     dataset = load_dataset(
         path=path,
@@ -23,13 +23,13 @@ def load_dataset(
             resume_download=True,
             force_download=False,
         ),
-    )[split]
+        split=split,
+    )
     if dataset_size is not None:
         indices = random.sample(range(len(dataset)), dataset_size)
         dataset = dataset.select(indices)
     return dataset
 
-# https://huggingface.co/datasets/ylecun/mnist
 # https://huggingface.co/docs/datasets/use_with_pytorch#stream-data
 def data_loader(
     path: str,
@@ -39,8 +39,8 @@ def data_loader(
     pre_transform: Optional[list[Callable[[Image], Image]]] = None,
     post_transform: Optional[list[Callable[[Tensor], Tensor]]] = None,
 ) -> DataLoader:
-    logger.info(f"loading mnist dataset[{split}]...")
-    dataset = load_dataset(
+    logger.info(f"loading {path}[{split}]...")
+    dataset = _load_dataset(
         path=path,
         split=split,
         dataset_size=dataset_size
@@ -49,7 +49,7 @@ def data_loader(
         transform=lambda x: batch_to_tensor(batch=x, pre_transform=pre_transform, post_transform=post_transform),
         columns=["image", "label"],
     )
-    logger.info(f"load mnist dataset[{split}] finished")
+    logger.info(f"load {path}[{split}] finished")
     return DataLoader(
         dataset=dataset,
         batch_size=batch_size,

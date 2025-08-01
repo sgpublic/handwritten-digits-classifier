@@ -12,6 +12,8 @@ from vision_models.models.mnist.mnist_model import MnistModel
 
 
 class MnistModelTrainer(MnistModel, VisionClassifyModelTrainer):
+    # https://huggingface.co/datasets/ylecun/mnist
+    @property
     def dataset_path(self) -> str:
         return "ylecun/mnist"
 
