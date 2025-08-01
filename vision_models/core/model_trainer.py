@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Callable
 
 import numpy
@@ -11,21 +12,31 @@ from torch.nn.modules.loss import _WeightedLoss
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
+from vision_models.core.types.dataset_type import DatasetColumnType, DatasetSplitType
 from vision_models.core.types.model_save_type import ModelSaveType
-from vision_models.core.utils.logger import create_logger
 from vision_models.core.utils.strings import arr2str, float2str
 from vision_models.core.model import VisionClassifyModel
 from vision_models.core.utils.dataset_loader import data_loader
 from vision_models.trainer.config import TRAINER_DATASET_MAX_EPOCHS, TRAINER_DATASET_BATCH_SIZE, TRAINER_DATASET_TEST_DATASET_SIZE, \
     TRAINER_MODEL_ACCURACY_THRESHOLD, TRAINER_LEARN_RATE
 
-logger = create_logger(__name__)
-
+@dataclass
+class DatasetConfig:
+    path: str
+    columns: dict[DatasetColumnType, str]
+    splits: dict[DatasetSplitType, str]
 
 class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
     @property
+    def __logger_name__(self) -> str:
+        return __name__
+
+    def __init__(self):
+        super().__init__()
+
+    @property
     @abstractmethod
-    def dataset_path(self) -> str:
+    def dataset_config(self) -> DatasetConfig:
         pass
 
     @property
@@ -48,10 +59,11 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
               test_dataset_size: int = TRAINER_DATASET_TEST_DATASET_SIZE,
               accuracy_threshold: float = TRAINER_MODEL_ACCURACY_THRESHOLD,
     ):
-        logger.info("prepare training")
+        self.logger.info("prepare training")
         train_loader = data_loader(
-            path=self.dataset_path,
-            split="train",
+            path=self.dataset_config.path,
+            split=self.dataset_config.splits[DatasetSplitType.TRAIN],
+            columns=self.dataset_config.columns,
             batch_size=batch_size,
             pre_transform=self.pre_transform + self.trainer_pre_transform,
             post_transform=self.post_transform + self.trainer_post_transform,
@@ -60,39 +72,39 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=learn_rate)
 
-        logger.info("start training")
+        self.logger.info("start training")
         self.model.train()
         best_loss = None
         for index in range(epochs):
-            logger.info(f"epoch [{index + 1}/{epochs}] start...")
+            self.logger.info(f"epoch [{index + 1}/{epochs}] start...")
             avg_loss = self._real_train(train_loader=train_loader, criterion=criterion, optimizer=optimizer)
-            logger.info(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.6f}")
-            logger.info("testing...")
+            self.logger.info(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.6f}")
+            self.logger.info("testing...")
             avg_accuracy, current_accuracy = self._test(test_size=test_dataset_size)
-            logger.info(f"epoch [{index + 1}/{epochs}], accuracy({float2str(avg_accuracy)} in average): {arr2str(current_accuracy)}")
+            self.logger.info(f"epoch [{index + 1}/{epochs}], accuracy({float2str(avg_accuracy)} in average): {arr2str(current_accuracy)}")
 
             if best_loss is None:
                 best_loss = avg_loss
             if best_loss < avg_loss:
-                logger.info("loss increased, skip saving model_save weight")
+                self.logger.info("loss increased, skip saving model_save weight")
                 continue
-            logger.info("loss decreased, save model_save weight")
+            self.logger.info("loss decreased, save model_save weight")
             if not self.save():
-                logger.exception("failed to save weight, stop training")
+                self.logger.exception("failed to save weight, stop training")
                 break
 
             # 要求每个数字的准确率都达到预期
             # if all(x >= accuracy_threshold for x in current_accuracy):
             # 要求平均准确率达到预期
             if avg_accuracy >= accuracy_threshold:
-                logger.info("the accuracy requirement is met, stop training")
+                self.logger.info("the accuracy requirement is met, stop training")
                 break
-        logger.info("training finished")
+        self.logger.info("training finished")
 
     def _real_train(self, train_loader: DataLoader, criterion: _WeightedLoss, optimizer: Optimizer) -> float:
         total_loss = 0
         for batch in train_loader:
-            inputs, labels = batch["image"], batch["label"]
+            inputs, labels = batch[DatasetColumnType.IMAGE], batch[DatasetColumnType.LABEL]
             inputs, labels = self.move_to_device(inputs), self.move_to_device(labels)
 
             optimizer.zero_grad()
@@ -110,14 +122,15 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
             total_count = numpy.zeros(10, dtype=numpy.int32)
             total_correct = numpy.zeros(10, dtype=numpy.int32)
             test_loader = data_loader(
-                path=self.dataset_path,
-                split="test",
+                path=self.dataset_config.path,
+                split=self.dataset_config.splits[DatasetSplitType.TEST],
+                columns=self.dataset_config.columns,
                 batch_size=test_size,
                 dataset_size=test_size
             )
             # 实际上这个循环只跑一次
             for batch in test_loader:
-                inputs, labels = batch["image"], batch["label"].tolist()
+                inputs, labels = batch[DatasetColumnType.IMAGE], batch[DatasetColumnType.LABEL].tolist()
                 outputs = self.predict(inputs)
                 for (a, _), b in zip(outputs, labels):
                     total_count[b] += 1
@@ -135,7 +148,7 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                 self._save_as_onnx()
             return True
         except Exception:
-            logger.exception("weight save failed!")
+            self.logger.exception("weight save failed!")
             return False
         finally:
             if still_training:
@@ -156,7 +169,7 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
 
     def upload(self, model_type: ModelSaveType):
         try:
-            logger.info(f"uploading .{model_type.value} model_save...")
+            self.logger.info(f"uploading .{model_type.value} model_save...")
             upload_file(
                 path_or_fileobj=self.model_local(model_type=model_type),
                 path_in_repo=self.repo_pretrained_model(model_type=model_type),
@@ -164,4 +177,4 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                 repo_type="model",
             )
         except Exception:
-            logger.exception(f"upload .{model_type.value} model_save failed")
+            self.logger.exception(f"upload .{model_type.value} model_save failed")

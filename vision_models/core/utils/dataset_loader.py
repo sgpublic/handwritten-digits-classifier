@@ -7,6 +7,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from datasets.arrow_dataset import Dataset
 
+from vision_models.core.types.dataset_type import DatasetColumnType
 from vision_models.core.utils.logger import create_logger
 from vision_models.core.utils.tensor import batch_to_tensor
 
@@ -33,7 +34,8 @@ def _load_dataset(
 # https://huggingface.co/docs/datasets/use_with_pytorch#stream-data
 def data_loader(
     path: str,
-    split: str = "train",
+    split: str,
+    columns: dict[DatasetColumnType, str],
     batch_size: int = 1000,
     dataset_size: Optional[int] = None,
     pre_transform: Optional[list[Callable[[Image], Image]]] = None,
@@ -46,8 +48,8 @@ def data_loader(
         dataset_size=dataset_size
     )
     dataset = dataset.with_transform(
-        transform=lambda x: batch_to_tensor(batch=x, pre_transform=pre_transform, post_transform=post_transform),
-        columns=["image", "label"],
+        transform=lambda x: batch_to_tensor(batch=x, columns=columns, pre_transform=pre_transform, post_transform=post_transform),
+        columns=list(columns.values()),
     )
     logger.info(f"load {path}[{split}] finished")
     return DataLoader(

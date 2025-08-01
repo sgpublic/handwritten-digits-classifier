@@ -9,6 +9,10 @@ from vision_models.core.model import VisionClassifyModel
 
 
 class Cifar10Model(VisionClassifyModel):
+    @property
+    def __logger_name__(self) -> str:
+        return __name__
+
     def _create_empty_resnet_custom_model(self) -> ResNet:
         model = models.resnet34(
             num_classes=10,

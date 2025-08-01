@@ -3,21 +3,36 @@ from typing import Callable
 import torch
 from torch import Tensor
 
-from vision_models.core.model_trainer import VisionClassifyModelTrainer
+from vision_models.core.model_trainer import VisionClassifyModelTrainer, DatasetConfig
+from vision_models.core.types.dataset_type import DatasetColumnType, DatasetSplitType
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.models.cifar10.cifar10_model import Cifar10Model
 
 
 class Cifar10ModelTrainer(Cifar10Model, VisionClassifyModelTrainer):
-    # https://huggingface.co/datasets/uoft-cs/cifar10
     @property
-    def dataset_path(self) -> str:
-        return "uoft-cs/cifar10"
+    def __logger_name__(self) -> str:
+        return __name__
+
+    @property
+    def dataset_config(self) -> DatasetConfig:
+        return DatasetConfig(
+            # https://huggingface.co/datasets/uoft-cs/cifar10
+            path="uoft-cs/cifar10",
+            columns={
+                DatasetColumnType.IMAGE: "img",
+                DatasetColumnType.LABEL: "label",
+            },
+            splits={
+                DatasetSplitType.TRAIN: "train",
+                DatasetSplitType.TEST: "test",
+            },
+        )
 
     def _save_as_onnx(self):
         torch.onnx.export(
             self.model,
-            self.move_to_device(torch.randn(1, 3, 28, 28)),
+            self.move_to_device(torch.randn(1, 3, 32, 32)),
             self.model_local(model_type=ModelSaveType.ONNX),
             input_names=["input"],
             output_names=["output"],

@@ -1,6 +1,7 @@
 import os.path
 import shutil
 from abc import abstractmethod, ABC
+from logging import Logger
 from typing import Callable, Optional
 
 import torch
@@ -11,20 +12,23 @@ from torch.nn import Module
 from torchvision.models import ResNet, VGG
 
 from vision_models.core.config import CORE_DEVICE, CORE_DATASET_TYPE, CORE_MODEL_TYPE, CORE_DEBUG
+from vision_models.core.log import Log
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.core.types.model_type import ModelType
-from vision_models.core.utils.logger import create_logger
 from vision_models.core.utils.resource import resource_path
 from vision_models.core.utils.tensor import images_to_batch_tenser
 
-logger = create_logger(__name__)
 
+class VisionClassifyModel(Log, ABC):
+    @property
+    def __logger_name__(self) -> str:
+        return __name__
 
-class VisionClassifyModel(ABC):
     def __init__(self):
+        super().__init__()
         _device = CORE_DEVICE
         if _device == "cuda" and not torch.cuda.is_available():
-            logger.warn("cuda is not available, use cpu as fallback.")
+            self.logger.warn("cuda is not available, use cpu as fallback.")
             _device = "cpu"
         self._device = torch.device(_device)
 
@@ -89,33 +93,33 @@ class VisionClassifyModel(ABC):
 
     def load_weight(self, use_pretrained: bool = True) -> bool:
         try:
-            logger.info("load model weights...")
+            self.logger.info("load model weights...")
             if use_pretrained:
-                logger.info("downloading model weight...")
+                self.logger.info("downloading model weight...")
                 model_pretrained = hf_hub_download(
                     repo_id=self.repo_id,
                     filename=self.repo_pretrained_model(model_type=ModelSaveType.ORIGIN),
                 )
-                logger.info("download model weight finished")
+                self.logger.info("download model weight finished")
                 state_dict = torch.load(model_pretrained)
             else:
-                logger.info("prepare local model weights...")
+                self.logger.info("prepare local model weights...")
                 model_path = self.model_local(model_type=ModelSaveType.ORIGIN)
                 if not os.path.exists(model_path) or not os.path.isfile(model_path):
                     raise FileNotFoundError("weights not exist!")
                 shutil.copy(model_path, f"{model_path}.bak")
-                logger.info("prepare local model weights finished")
+                self.logger.info("prepare local model weights finished")
                 state_dict = torch.load(model_path)
 
             self.model.load_state_dict(state_dict)
 
-            logger.info("load model_save finished")
+            self.logger.info("load model_save finished")
             return True
         except FileNotFoundError:
-            logger.warn("weights not exist!")
+            self.logger.warn("weights not exist!")
             return False
         except Exception:
-            logger.exception("weights load failed!")
+            self.logger.exception("weights load failed!")
             return False
         finally:
             self.move_to_device(self.model)

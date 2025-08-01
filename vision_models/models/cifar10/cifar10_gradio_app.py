@@ -10,6 +10,10 @@ from vision_models.models.cifar10.cifar10_model import Cifar10Model
 logger = create_logger(__name__)
 
 class Cifar10GradioApp(GradioApp):
+    @property
+    def __logger_name__(self) -> str:
+        return __name__
+
     def _load_model(self) -> VisionClassifyModel:
         return Cifar10Model()
 

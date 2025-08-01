@@ -12,6 +12,10 @@ from vision_models.models.mnist.mnist_model import MnistModel
 logger = create_logger(__name__)
 
 class MnistGradioApp(GradioApp):
+    @property
+    def __logger_name__(self) -> str:
+        return __name__
+
     def _load_model(self) -> VisionClassifyModel:
         return MnistModel()
 

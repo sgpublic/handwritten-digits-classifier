@@ -1,14 +1,20 @@
 from abc import ABC, abstractmethod
+from logging import Logger
 
 from PIL.Image import Image
-from torch import Tensor
 
+from vision_models.core.log import Log
 from vision_models.core.model import VisionClassifyModel
 from vision_models.gradio_app.config import GRADIO_MODEL_USE_PRETRAINED, GRADIO_LISTEN_HOST, GRADIO_LISTEN_PORT
 
 
-class GradioApp(ABC):
+class GradioApp(Log, ABC):
+    @property
+    def __logger_name__(self) -> str:
+        return __name__
+
     def __init__(self):
+        super().__init__()
         self._gradio = self._create_gradio()
         self._model = self._load_model()
 

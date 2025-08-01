@@ -4,7 +4,8 @@ import torch
 from torch import Tensor
 from torchvision import transforms
 
-from vision_models.core.model_trainer import VisionClassifyModelTrainer
+from vision_models.core.model_trainer import VisionClassifyModelTrainer, DatasetConfig
+from vision_models.core.types.dataset_type import DatasetSplitType, DatasetColumnType
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.models.mnist.config import MNIST_DATASET_RANDOM_ROTATE, MNIST_DATASET_RANDOM_SCALE, \
     MNIST_DATASET_RANDOM_ELASTIC_ALPHA, MNIST_DATASET_RANDOM_ELASTIC_SIGMA
@@ -12,10 +13,24 @@ from vision_models.models.mnist.mnist_model import MnistModel
 
 
 class MnistModelTrainer(MnistModel, VisionClassifyModelTrainer):
-    # https://huggingface.co/datasets/ylecun/mnist
     @property
-    def dataset_path(self) -> str:
-        return "ylecun/mnist"
+    def __logger_name__(self) -> str:
+        return __name__
+
+    @property
+    def dataset_config(self) -> DatasetConfig:
+        return DatasetConfig(
+            # https://huggingface.co/datasets/ylecun/mnist
+            path="ylecun/mnist",
+            columns={
+                DatasetColumnType.IMAGE: "image",
+                DatasetColumnType.LABEL: "label",
+            },
+            splits={
+                DatasetSplitType.TRAIN: "train",
+                DatasetSplitType.TEST: "test",
+            },
+        )
 
     def _save_as_onnx(self):
         torch.onnx.export(
