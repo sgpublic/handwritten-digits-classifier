@@ -64,6 +64,8 @@ env.CORE_MODEL_TYPE = "ResNet_Custom"
 env.TRAINER_MODEL_ACCURACY_THRESHOLD = "0.95"
 env.TRAINER_DATASET_TEST_DATASET_SIZE = "1000"
 env.TRAINER_DATASET_MAX_EPOCHS = "200"
+env.TRAINER_LEARN_RATE = "5e-4"
+env.TRAINER_DATASET_BATCH_SIZE = "50"
 
 [tasks.train_cifar10_vgg]
 cmd = ["python", "-m", "vision_models.trainer.train"]
