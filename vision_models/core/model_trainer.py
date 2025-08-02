@@ -216,7 +216,7 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
             self._save_line_chart(
                 title=f"Average Accuracy",
                 x_label="step", x=steps_list,
-                y_label="avg_accuracy", y=avg_accuracy_list, y_ticks=numpy.arange(0.0, 1.0, 0.2),
+                y_label="avg_accuracy", y=avg_accuracy_list, y_ticks=numpy.linspace(0.0, 1.0, 6),
                 save_name="avg_accuracy"
             )
             for accuracy_index in range(len(accuracy_list)):
@@ -224,7 +224,7 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                 self._save_line_chart(
                     title=f"Accuracy of Class {accuracy_index}",
                     x_label="step", x=steps_list,
-                    y_label="accuracy", y=accuracy_item, y_ticks=numpy.arange(0.0, 1.0, 0.2),
+                    y_label="accuracy", y=accuracy_item, y_ticks=numpy.linspace(0.0, 1.0, 6),
                     save_name=f"accuracy-class_{accuracy_index}"
                 )
             self.logger.info("save charts finished")
