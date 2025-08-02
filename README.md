@@ -73,7 +73,7 @@ WebUI 相关环境变量：
 | GRADIO_LISTEN_PORT          | WebUI 监听端口      | 7890      |
 | GRADIO_MODEL_USE_PRETRAINED | WebUI 是否使用预训练模型 | `true`    |
 
-手写数字模型相关环境变量：
+MNIST 相关环境变量：
 
 | 变量名称                               | 变量解释                                                                                             | 默认值  |
 |------------------------------------|--------------------------------------------------------------------------------------------------|------|
@@ -81,3 +81,10 @@ WebUI 相关环境变量：
 | MNIST_DATASET_RANDOM_SCALE         | 对训练集随机进行缩放变换，将在 `[1.0 - MNIST_DATASET_RANDOM_SCALE, 1.0 + MNIST_DATASET_RANDOM_SCALE]` 倍率范围内随机变换 | 0.2  |
 | MNIST_DATASET_RANDOM_ELASTIC_ALPHA | 对训练集随机进行弹性变换的强度                                                                                  | 34.0 |
 | MNIST_DATASET_RANDOM_ELASTIC_SIGMA | 对训练集随机进行弹性变换的平滑度                                                                                 | 4.0  |
+
+CIFAR-10 相关环境变量：
+
+| 变量名称                        | 变量解释     | 默认值  |
+|-----------------------------|----------|------|
+| CIFAR10_RESNET_WEIGHT_DECAY | L2 正则化系数 | 1e-4 |
+| CIFAR10_RESNET_DROPOUT      | 丢弃率      | 0.3  |

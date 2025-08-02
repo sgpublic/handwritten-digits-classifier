@@ -21,6 +21,9 @@ gradio = ">=5.33.0,<5.34"
 huggingface-hub = ">=0.33.4,<0.34"
 datasets = {extras = ["vision"], version = ">=4.0.0,<4.1"}
 pooch = ">=1.8.2,<1.9"
+pandas = ">=2.3.1, <3"
+pandas-stubs = ">=2.3.0.250703, <3"
+matplotlib = ">=3.10.5, <4"
 
 [feature.cuda.system-requirements]
 cuda = "12.8"
@@ -39,19 +42,70 @@ default = { features = ["cuda"] }
 
 [tasks]
 train = { cmd = ["python", "-m", "vision_models.trainer.train"] }
-train_mnist_resnet = { cmd = ["python", "-m", "vision_models.trainer.train"], env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "ResNet_Custom" } }
-train_mnist_vgg = { cmd = ["python", "-m", "vision_models.trainer.train"], env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "VGG_Custom" } }
-train_cifar10_resnet = { cmd = ["python", "-m", "vision_models.trainer.train"], env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "ResNet_Custom" } }
-train_cifar10_vgg = { cmd = ["python", "-m", "vision_models.trainer.train"], env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "VGG_Custom" } }
-
 webui = { cmd = ["python", "-m", "vision_models.gradio_app.main"] }
-webui_mnist_resnet = { cmd = ["python", "-m", "vision_models.gradio_app.main"], env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "ResNet_Custom" } }
-webui_mnist_vgg = { cmd = ["python", "-m", "vision_models.gradio_app.main"], env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "VGG_Custom" } }
-webui_cifar10_resnet = { cmd = ["python", "-m", "vision_models.gradio_app.main"], env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "ResNet_Custom" } }
-webui_cifar10_vgg = { cmd = ["python", "-m", "vision_models.gradio_app.main"], env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "VGG_Custom" } }
-
 upload = { cmd = ["python", "-m", "vision_models.trainer.upload"] }
-upload_mnist_resnet = { cmd = ["python", "-m", "vision_models.trainer.upload"], env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "ResNet_Custom" } }
-upload_mnist_vgg = { cmd = ["python", "-m", "vision_models.trainer.upload"], env = { CORE_DATASET_TYPE = "MNIST", CORE_MODEL_TYPE = "VGG_Custom" } }
-upload_cifar10_resnet = { cmd = ["python", "-m", "vision_models.trainer.upload"], env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "ResNet_Custom" } }
-upload_cifar10_vgg = { cmd = ["python", "-m", "vision_models.trainer.upload"], env = { CORE_DATASET_TYPE = "CIFAR_10", CORE_MODEL_TYPE = "VGG_Custom" } }
+
+[tasks.train_mnist_resnet]
+cmd = ["python", "-m", "vision_models.trainer.train"]
+env.CORE_DATASET_TYPE = "MNIST"
+env.CORE_MODEL_TYPE = "ResNet_Custom"
+env.TRAINER_MODEL_ACCURACY_THRESHOLD = "0.995"
+env.TRAINER_DATASET_TEST_DATASET_SIZE = "2000"
+
+[tasks.train_mnist_vgg]
+cmd = ["python", "-m", "vision_models.trainer.train"]
+env.CORE_DATASET_TYPE = "MNIST"
+env.CORE_MODEL_TYPE = "VGG_Custom"
+
+[tasks.train_cifar10_resnet]
+cmd = ["python", "-m", "vision_models.trainer.train"]
+env.CORE_DATASET_TYPE = "CIFAR_10"
+env.CORE_MODEL_TYPE = "ResNet_Custom"
+env.TRAINER_MODEL_ACCURACY_THRESHOLD = "0.95"
+env.TRAINER_DATASET_TEST_DATASET_SIZE = "1000"
+env.TRAINER_DATASET_MAX_EPOCHS = "200"
+
+[tasks.train_cifar10_vgg]
+cmd = ["python", "-m", "vision_models.trainer.train"]
+env.CORE_DATASET_TYPE = "CIFAR_10"
+env.CORE_MODEL_TYPE = "VGG_Custom"
+
+[tasks.webui_mnist_resnet]
+cmd = ["python", "-m", "vision_models.gradio_app.main"]
+env.CORE_DATASET_TYPE = "MNIST"
+env.CORE_MODEL_TYPE = "ResNet_Custom"
+
+[tasks.webui_mnist_vgg]
+cmd = ["python", "-m", "vision_models.gradio_app.main"]
+env.CORE_DATASET_TYPE = "MNIST"
+env.CORE_MODEL_TYPE = "VGG_Custom"
+
+[tasks.webui_cifar10_resnet]
+cmd = ["python", "-m", "vision_models.gradio_app.main"]
+env.CORE_DATASET_TYPE = "CIFAR_10"
+env.CORE_MODEL_TYPE = "ResNet_Custom"
+
+[tasks.webui_cifar10_vgg]
+cmd = ["python", "-m", "vision_models.gradio_app.main"]
+env.CORE_DATASET_TYPE = "CIFAR_10"
+env.CORE_MODEL_TYPE = "VGG_Custom"
+
+[tasks.upload_mnist_resnet]
+cmd = ["python", "-m", "vision_models.trainer.upload"]
+env.CORE_DATASET_TYPE = "MNIST"
+env.CORE_MODEL_TYPE = "ResNet_Custom"
+
+[tasks.upload_mnist_vgg]
+cmd = ["python", "-m", "vision_models.trainer.upload"]
+env.CORE_DATASET_TYPE = "MNIST"
+env.CORE_MODEL_TYPE = "VGG_Custom"
+
+[tasks.upload_cifar10_resnet]
+cmd = ["python", "-m", "vision_models.trainer.upload"]
+env.CORE_DATASET_TYPE = "CIFAR_10"
+env.CORE_MODEL_TYPE = "ResNet_Custom"
+
+[tasks.upload_cifar10_vgg]
+cmd = ["python", "-m", "vision_models.trainer.upload"]
+env.CORE_DATASET_TYPE = "CIFAR_10"
+env.CORE_MODEL_TYPE = "VGG_Custom"

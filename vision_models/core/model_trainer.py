@@ -1,24 +1,30 @@
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional, Union
 
 import numpy
+import pandas
 import torch
 from PIL.Image import Image
 from huggingface_hub import upload_file
+from matplotlib import pyplot as plt
 from torch import nn, optim, Tensor
 from torch.nn.modules.loss import _WeightedLoss
 from torch.optim import Optimizer
+from torch.optim.optimizer import ParamsT
 from torch.utils.data import DataLoader
 
 from vision_models.core.types.dataset_type import DatasetColumnType, DatasetSplitType
 from vision_models.core.types.model_save_type import ModelSaveType
+from vision_models.core.utils.resource import resource_path
 from vision_models.core.utils.strings import arr2str, float2str
 from vision_models.core.model import VisionClassifyModel
 from vision_models.core.utils.dataset_loader import data_loader
-from vision_models.trainer.config import TRAINER_DATASET_MAX_EPOCHS, TRAINER_DATASET_BATCH_SIZE, TRAINER_DATASET_TEST_DATASET_SIZE, \
-    TRAINER_MODEL_ACCURACY_THRESHOLD, TRAINER_LEARN_RATE
+from vision_models.trainer.config import TRAINER_DATASET_MAX_EPOCHS, TRAINER_DATASET_BATCH_SIZE, \
+    TRAINER_DATASET_TEST_DATASET_SIZE, \
+    TRAINER_MODEL_ACCURACY_THRESHOLD, TRAINER_LEARN_RATE, TRAINER_CHART_SAVE_INDICATORS
+
 
 @dataclass
 class DatasetConfig:
@@ -52,10 +58,16 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
     def load_weight(self, use_pretrained: bool = True) -> bool:
         return super().load_weight(use_pretrained=False)
 
+    # noinspection PyMethodMayBeStatic
+    def create_criterion(self):
+        return nn.CrossEntropyLoss()
+
+    def create_optimizer(self, parameters: ParamsT, learn_rate: float):
+        return optim.Adam(self.model.parameters(), lr=learn_rate)
+
     def train(self,
               epochs: int = TRAINER_DATASET_MAX_EPOCHS,
               batch_size: int = TRAINER_DATASET_BATCH_SIZE,
-              learn_rate: float = TRAINER_LEARN_RATE,
               test_dataset_size: int = TRAINER_DATASET_TEST_DATASET_SIZE,
               accuracy_threshold: float = TRAINER_MODEL_ACCURACY_THRESHOLD,
     ):
@@ -69,19 +81,55 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
             post_transform=self.post_transform + self.trainer_post_transform,
         )
 
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=learn_rate)
+        criterion = self.create_criterion()
+        optimizer = self.create_optimizer(parameters=self.model.parameters(), learn_rate=TRAINER_LEARN_RATE)
 
         self.logger.info("start training")
         self.model.train()
         best_loss = None
+        loss_list: Optional[list[float]] = None
+        avg_loss_list: Optional[list[float]] = None
+        steps_list: Optional[list[int]] = None
+        avg_accuracy_list: Optional[list[float]] = None
+        accuracy_list: Optional[list[list[float]]] = None
+        if TRAINER_CHART_SAVE_INDICATORS:
+            loss_list = []
+            avg_loss_list = []
+            steps_list = []
+            avg_accuracy_list = []
+            accuracy_list = [[] for _ in range(self.num_classes)]
+
         for index in range(epochs):
-            self.logger.info(f"epoch [{index + 1}/{epochs}] start...")
-            avg_loss = self._real_train(train_loader=train_loader, criterion=criterion, optimizer=optimizer)
-            self.logger.info(f"epoch [{index + 1}/{epochs}], loss: {avg_loss:.6f}")
+            self.logger.info(f"------------  epoch [{index + 1}/{epochs}] start  ------------")
+            self.logger.info("training...")
+            steps, avg_loss = self._real_train(
+                train_loader=train_loader,
+                criterion=criterion,
+                optimizer=optimizer,
+                loss_list=loss_list
+            )
+            self.logger.info(f"loss: {avg_loss:.6f}")
             self.logger.info("testing...")
             avg_accuracy, current_accuracy = self._test(test_size=test_dataset_size)
-            self.logger.info(f"epoch [{index + 1}/{epochs}], accuracy({float2str(avg_accuracy)} in average): {arr2str(current_accuracy)}")
+            self.logger.info(f"accuracy({float2str(avg_accuracy)} in average): {arr2str(current_accuracy)}")
+            if TRAINER_CHART_SAVE_INDICATORS:
+                if len(steps_list) == 0:
+                    steps_list.append(steps)
+                else:
+                    steps_list.append(steps_list[len(steps_list) - 1] + steps)
+                avg_loss_list.append(avg_loss)
+                avg_accuracy_list.append(avg_accuracy)
+                for i in range(len(current_accuracy)):
+                    accuracy_list[i].append(current_accuracy[i])
+                self.save_chart(
+                    loss_list=loss_list,
+                    avg_loss_list=avg_loss_list,
+                    steps_list=steps_list,
+                    avg_accuracy_list=avg_accuracy_list,
+                    accuracy_list=accuracy_list
+                )
+            self.logger.info(f"-------------  epoch [{index + 1}/{epochs}] end  -------------")
+
 
             if best_loss is None:
                 best_loss = avg_loss
@@ -101,8 +149,9 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                 break
         self.logger.info("training finished")
 
-    def _real_train(self, train_loader: DataLoader, criterion: _WeightedLoss, optimizer: Optimizer) -> float:
-        total_loss = 0
+    def _real_train(self, train_loader: DataLoader, criterion: _WeightedLoss, optimizer: Optimizer, loss_list: Optional[list[float]]) -> tuple[int, float]:
+        total_loss: float = 0
+        current_step: int = 0
         for batch in train_loader:
             inputs, labels = batch[DatasetColumnType.IMAGE], batch[DatasetColumnType.LABEL]
             inputs, labels = self.move_to_device(inputs), self.move_to_device(labels)
@@ -114,13 +163,16 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
             optimizer.step()
 
             total_loss += loss.item()
+            current_step += 1
+            if loss_list is not None:
+                loss_list.append(loss.item())
 
-        return total_loss / len(train_loader)
+        return current_step, total_loss / len(train_loader)
 
     def _test(self, test_size: int = 10000) -> tuple[float, list[float]]:
         with torch.no_grad():
-            total_count = numpy.zeros(10, dtype=numpy.int32)
-            total_correct = numpy.zeros(10, dtype=numpy.int32)
+            total_count = numpy.zeros(self.num_classes, dtype=numpy.int32)
+            total_correct = numpy.zeros(self.num_classes, dtype=numpy.int32)
             test_loader = data_loader(
                 path=self.dataset_config.path,
                 split=self.dataset_config.splits[DatasetSplitType.TEST],
@@ -137,6 +189,80 @@ class VisionClassifyModelTrainer(VisionClassifyModel, ABC):
                     if a == b:
                         total_correct[a] += 1
             return float(total_correct.sum() / total_count.sum()), [float(correct / total) for correct, total in zip(total_correct, total_count)]
+
+    def save_chart(self,
+                   loss_list: list[float],
+                   avg_loss_list: list[float],
+                   steps_list: list[int],
+                   avg_accuracy_list: list[float],
+                   accuracy_list: list[list[float]]) -> bool:
+        if not TRAINER_CHART_SAVE_INDICATORS:
+            self.logger.info("skip save charts")
+            return False
+        try:
+            self.logger.info("save charts...")
+            self._save_line_chart(
+                title=f"Loss per Step",
+                x_label="step", x=numpy.arange(len(loss_list)),
+                y_label="loss", y=loss_list,
+                save_name="loss"
+            )
+            self._save_line_chart(
+                title=f"Average Loss",
+                x_label="step", x=steps_list,
+                y_label="avg_loss", y=avg_loss_list,
+                save_name="avg_loss"
+            )
+            self._save_line_chart(
+                title=f"Average Accuracy",
+                x_label="step", x=steps_list,
+                y_label="avg_accuracy", y=avg_accuracy_list, y_ticks=numpy.arange(0.0, 1.0, 0.2),
+                save_name="avg_accuracy"
+            )
+            for accuracy_index in range(len(accuracy_list)):
+                accuracy_item = accuracy_list[accuracy_index]
+                self._save_line_chart(
+                    title=f"Accuracy of Class {accuracy_index}",
+                    x_label="step", x=steps_list,
+                    y_label="accuracy", y=accuracy_item, y_ticks=numpy.arange(0.0, 1.0, 0.2),
+                    save_name=f"accuracy-class_{accuracy_index}"
+                )
+            self.logger.info("save charts finished")
+            return True
+        except Exception:
+            self.logger.exception("failed to save charts")
+            return False
+
+    @property
+    def charts_base_path(self):
+        return resource_path("./charts", self.save_base_path)
+
+    def _save_line_chart(self,
+                         title: str,
+                         x_label: str, x: Union[list[int], numpy.ndarray],
+                         y_label: str, y: Union[list[float], numpy.ndarray],
+                         save_name: str,
+                         x_ticks: Optional[Union[range, numpy.ndarray]] = None,
+                         y_ticks: Optional[Union[range, numpy.ndarray]] = None,
+                         figsize: tuple[float, float] = (15, 6), dpi: int = 300):
+        os.makedirs(self.charts_base_path, exist_ok=True)
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        if type(x) == list:
+            x = numpy.array(x)
+        if type(y) == list:
+            y = numpy.array(y)
+        loss_data = pandas.DataFrame({
+            x_label: x,
+            y_label: y,
+        })
+        loss_data.plot.line(x=x_label, y=y_label, ax=ax)
+        ax.set_title(title)
+        if x_ticks is not None:
+            ax.set_xticks(x_ticks)
+        if y_ticks is not None:
+            ax.set_yticks(y_ticks)
+        fig.savefig(resource_path(f"{save_name}.png", self.charts_base_path))
+        plt.close(fig)
 
     def save(self) -> bool:
         still_training = self.model.training

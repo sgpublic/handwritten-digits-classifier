@@ -56,4 +56,5 @@ def data_loader(
         dataset=dataset,
         batch_size=batch_size,
         shuffle=True,
+        drop_last=True,
     )

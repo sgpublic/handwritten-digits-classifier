@@ -1,7 +1,6 @@
 import os.path
 import shutil
 from abc import abstractmethod, ABC
-from logging import Logger
 from typing import Callable, Optional
 
 import torch
@@ -28,7 +27,7 @@ class VisionClassifyModel(Log, ABC):
         super().__init__()
         _device = CORE_DEVICE
         if _device == "cuda" and not torch.cuda.is_available():
-            self.logger.warn("cuda is not available, use cpu as fallback.")
+            self.logger.warning("cuda is not available, use cpu as fallback.")
             _device = "cpu"
         self._device = torch.device(_device)
 
@@ -55,13 +54,22 @@ class VisionClassifyModel(Log, ABC):
     def model_base_path(self) -> str:
         return f"{self._dataset_type.value}/{self.model_type.value}"
 
+    @property
+    def save_base_path(self) -> str:
+        return resource_path(f"./model_save/{self.model_base_path}")
+
     def model_local(self, model_type: ModelSaveType) -> str:
         filename = model_type.with_file_name("model_weight")
-        return resource_path(f"./model_save/{self.model_base_path}/{filename}")
+        return resource_path(f"./{filename}", self.save_base_path)
 
     @property
     def model(self) -> Module:
         return self._model
+
+    @property
+    @abstractmethod
+    def num_classes(self) -> int:
+        pass
 
     def move_to_device(self, obj: any):
         return obj.to(self._device)
@@ -116,7 +124,7 @@ class VisionClassifyModel(Log, ABC):
             self.logger.info("load model weights finished")
             return True
         except FileNotFoundError:
-            self.logger.warn("weights not exist!")
+            self.logger.warning("weights not exist!")
             return False
         except Exception:
             self.logger.exception("weights load failed!")

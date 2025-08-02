@@ -1,7 +1,10 @@
 import os
+from distutils.util import strtobool
 
 TRAINER_LEARN_RATE: float = float(os.getenv("TRAINER_LEARN_RATE", "1e-2"))
 TRAINER_DATASET_BATCH_SIZE: int = int(os.getenv("TRAINER_DATASET_BATCH_SIZE", "32"))
 TRAINER_DATASET_TEST_DATASET_SIZE: int = int(os.getenv("TRAINER_DATASET_TEST_DATASET_SIZE", "1000"))
 TRAINER_DATASET_MAX_EPOCHS: int = int(os.getenv("TRAINER_DATASET_MAX_EPOCHS", "50"))
 TRAINER_MODEL_ACCURACY_THRESHOLD: float = float(os.getenv("TRAINER_MODEL_ACCURACY_THRESHOLD", "0.995"))
+
+TRAINER_CHART_SAVE_INDICATORS: bool = bool(strtobool(os.getenv("TRAINER_CHART_SAVE_INDICATORS", "true")))

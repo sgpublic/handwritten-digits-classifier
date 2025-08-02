@@ -1,12 +1,14 @@
 from typing import Callable
 
 import torch
-from torch import Tensor
+from torch import Tensor, optim
+from torch.optim.optimizer import ParamsT
 
 from vision_models.core.model_trainer import VisionClassifyModelTrainer, DatasetConfig
 from vision_models.core.types.dataset_type import DatasetColumnType, DatasetSplitType
 from vision_models.core.types.model_save_type import ModelSaveType
 from vision_models.models.cifar10.cifar10_model import Cifar10Model
+from vision_models.models.cifar10.config import CIFAR10_RESNET_WEIGHT_DECAY
 
 
 class Cifar10ModelTrainer(Cifar10Model, VisionClassifyModelTrainer):
@@ -28,6 +30,10 @@ class Cifar10ModelTrainer(Cifar10Model, VisionClassifyModelTrainer):
                 DatasetSplitType.TEST: "test",
             },
         )
+
+    def create_optimizer(self, parameters: ParamsT, learn_rate: float):
+        # 设置 weight_decay 以应对过拟合
+        return optim.Adam(params=parameters, lr=learn_rate, weight_decay=CIFAR10_RESNET_WEIGHT_DECAY)
 
     def _save_as_onnx(self):
         torch.onnx.export(

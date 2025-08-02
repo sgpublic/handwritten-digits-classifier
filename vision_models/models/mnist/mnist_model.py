@@ -13,13 +13,17 @@ class MnistModel(VisionClassifyModel):
     def __logger_name__(self) -> str:
         return __name__
 
+    @property
+    def num_classes(self) -> int:
+        return 10
+
     def _create_empty_resnet_custom_model(self) -> ResNet:
         model = _resnet(
             block=BasicBlock,
             layers=[1, 1, 1, 1],
             weights=None,
             progress=True,
-            num_classes=10
+            num_classes=self.num_classes
         )
         # 更改输入通道为 1、换用 3x3 大小的卷积核
         model.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1, bias=False)
